@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Communication Study</title>
+<style>
+  body { font-family: sans-serif; margin: 40px; max-width: 800px; }
+  textarea { width: 100%; height: 120px; margin-top: 10px; }
+  .hidden { display: none; }
+  .chat-box { border: 1px solid #ccc; padding: 10px; height: 200px; overflow-y: auto; margin-top: 10px; }
+  button { margin-top: 10px; }
+  .section { margin-top: 30px; }
+</style>
+</head>
+<body>
+
+<h2>Multilingual Academic Communication Study</h2>
+
+<div id="consentSection">
+  <p>Please read and agree to participate in this study.</p>
+  <button id="agreeBtn">I Agree</button>
+</div>
+
+<div id="demographicsSection" class="hidden section">
+  <h3>Background Questions</h3>
+
+  <label>Native language(s):</label>
+  <input id="nativeLang"><br><br>
+
+  <label>English proficiency (1–7):</label>
+  <input type="number" id="englishProf" min="1" max="7"><br><br>
+
+  <label>Years in English academic environment:</label>
+  <input type="number" id="yearsUS"><br><br>
+
+  <label>How often do you use AI writing tools? (1–7)</label>
+  <input type="number" id="aiFreq" min="1" max="7"><br><br>
+
+  <button id="submitDemo">Continue</button>
+</div>
+
+<div id="scenarioSection" class="hidden section">
+  <h3 id="scenarioTitle"></h3>
+  <p id="scenarioText"></p>
+
+  <label>Write your draft below:</label>
+  <textarea id="draftBox"></textarea>
+
+  <div id="aiSection" class="section">
+    <h4>AI Assistant (Optional)</h4>
+    <div class="chat-box" id="chatBox"></div>
+    <input id="aiInput" placeholder="Ask for feedback or revision help" style="width:80%">
+    <button id="aiSend">Send</button>
+  </div>
+
+  <div class="section">
+    <h4>Reflection</h4>
+
+    <label>Did you use AI assistance?</label>
+    <select id="usedAI">
+      <option value="yes">Yes</option>
+      <option value="no">No</option>
+    </select><br><br>
+
+    <label>How risky did this feel? (1–7)</label>
+    <input type="number" id="risk" min="1" max="7"><br><br>
+
+    <label>How authentic does this message feel to you? (1–7)</label>
+    <input type="number" id="auth" min="1" max="7"><br><br>
+
+    <button id="nextScenario">Next</button>
+  </div>
+</div>
+
+<div id="finalSection" class="hidden section">
+  <h3>Thank you!</h3>
+  <p>You have completed the study.</p>
+</div>
+
+<script>
+let aiUsedBehaviorally = false;
+let participantId = localStorage.getItem("pid");
+
+if (!participantId) {
+  participantId = crypto.randomUUID();
+  localStorage.setItem("pid", participantId);
+}
+
+let currentScenario = 0;
+
+let scenarios = [
+  { id: "prof_email", text: "Email your professor requesting a 2-day extension due to illness." },
+  { id: "group_slack", text: "Send a Slack message explaining you cannot attend a group meeting." },
+  { id: "discussion_post", text: "Write a discussion board response to a class reading." },
+  { id: "formal_request", text: "Email a professor asking about joining their research lab." }
+];
+
+function showSection(id) {
+  document.querySelectorAll("body > div").forEach(d => d.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+}
+
+document.getElementById("agreeBtn").onclick = () => {
+  showSection("demographicsSection");
+};
+
+document.getElementById("submitDemo").onclick = async () => {
+  await fetch("/demographics", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      participant_id: participantId,
+      native_language: document.getElementById("nativeLang").value,
+      english_proficiency: document.getElementById("englishProf").value,
+      years_in_us: document.getElementById("yearsUS").value,
+      ai_usage_frequency: document.getElementById("aiFreq").value
+    })
+  });
+
+  loadScenario();
+};
+
+function loadScenario() {
+  if (currentScenario >= scenarios.length) {
+    showSection("finalSection");
+    return;
+  }
+
+  const s = scenarios[currentScenario];
+  document.getElementById("scenarioTitle").innerText = "Scenario " + (currentScenario + 1);
+  document.getElementById("scenarioText").innerText = s.text;
+  document.getElementById("draftBox").value = "";
+  document.getElementById("chatBox").innerHTML = "";
+
+  document.getElementById("usedAI").value = "no";
+  document.getElementById("risk").value = "";
+  document.getElementById("auth").value = "";
+
+  showSection("scenarioSection");
+}
+
+document.getElementById("aiSend").onclick = async () => {
+  const msg = document.getElementById("aiInput").value;
+  if (!msg) return;
+
+  aiUsedBehaviorally = true;
+
+  const draftText = document.getElementById("draftBox").value;
+  const chatBox = document.getElementById("chatBox");
+
+  chatBox.innerHTML += "<div><b>You:</b> " + msg + "</div>";
+  document.getElementById("aiInput").value = "";
+
+  const response = await fetch("/chat", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      userId: participantId,
+      message: msg,
+      scenario: scenarios[currentScenario].text,
+      draft: draftText
+    })
+  });
+
+  const data = await response.json();
+
+  if (data.reply) {
+    document.getElementById("draftBox").value = data.reply;
+    chatBox.innerHTML += "<div><b>AI:</b> " + data.reply + "</div>";
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+};
+
+document.getElementById("nextScenario").onclick = async () => {
+
+  const draftText = document.getElementById("draftBox").value.trim();
+  const risk = document.getElementById("risk").value;
+  const auth = document.getElementById("auth").value;
+
+  if (!draftText) {
+    alert("Please write a draft before continuing.");
+    return;
+  }
+
+  if (!risk || !auth) {
+    alert("Please complete all reflection questions.");
+    return;
+  }
+
+  const scenarioId = scenarios[currentScenario].id;
+
+  try {
+
+    // 1️⃣ Save draft FIRST (always happens)
+    await fetch("/save-draft", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        participant_id: participantId,
+        scenario: scenarioId,
+        draft_text: draftText
+      })
+    });
+
+    // 2️⃣ Save reflection
+    await fetch("/survey-response", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        participant_id: participantId,
+        scenario: scenarioId,
+        draft_text: draftText,
+        used_ai_self_report: document.getElementById("usedAI").value,
+        used_ai_behavioral: aiUsedBehaviorally,
+        perceived_risk: risk,
+        authenticity: auth
+      })
+    });
+
+  } catch (err) {
+    console.error("Save error:", err);
+    alert("There was an error saving your response. Please try again.");
+    return;
+  }
+
+  aiUsedBehaviorally = false;
+  currentScenario++;
+  loadScenario();
+};
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,5 @@
+node_modules/
+survey.db
+chat_logs.json
+.env
+*.log
