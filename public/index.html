@@ -191,7 +191,7 @@ document.getElementById("nextScenario").onclick = async () => {
 
   try {
 
-    // 1️⃣ Save draft FIRST (always happens)
+    // Save draft FIRST (note this always happens)
     await fetch("/save-draft", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
@@ -202,7 +202,7 @@ document.getElementById("nextScenario").onclick = async () => {
       })
     });
 
-    // 2️⃣ Save reflection
+    // Save reflection
     await fetch("/survey-response", {
       method: "POST",
       headers: {"Content-Type":"application/json"},

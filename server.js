@@ -16,10 +16,7 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// ----------------------
 // SQLite Setup
-// ----------------------
-
 const db = new Database("survey.db");
 
 db.exec(`
@@ -66,17 +63,11 @@ CREATE TABLE IF NOT EXISTS final_drafts (
 );
 `);
 
-// ----------------------
-// In-memory conversations
-// conversations[userId][scenario] = message array
-// ----------------------
+// In-memory conversations: conversations[userId][scenario] = message array
 
 let conversations = {};
 
-// ----------------------
 // Initialize conversation memory
-// ----------------------
-
 function initializeConversation(userId, scenario) {
     if (!conversations[userId]) {
         conversations[userId] = {};
@@ -93,10 +84,7 @@ Keep responses concise and focused on clarity, professionalism, and tone improve
     ];
 }
 
-// ----------------------
 // Demographics endpoint
-// ----------------------
-
 app.post("/demographics", (req, res) => {
     const {
         participant_id,
@@ -125,10 +113,7 @@ app.post("/demographics", (req, res) => {
     res.json({ status: "saved" });
 });
 
-// ----------------------
 // Survey reflection endpoint
-// ----------------------
-
 app.post("/survey-response", (req, res) => {
     const {
         participant_id,
@@ -163,10 +148,7 @@ app.post("/survey-response", (req, res) => {
     res.json({ status: "saved" });
 });
 
-// ----------------------
 // Chat endpoint
-// ----------------------
-
 app.post("/chat", async (req, res) => {
     const { userId, message, scenario, draft } = req.body;
 
@@ -221,10 +203,7 @@ app.post("/chat", async (req, res) => {
     }
 });
 
-// ----------------------
 // Save final draft
-// ----------------------
-
 app.post("/save-draft", (req, res) => {
     const { participant_id, scenario, draft_text } = req.body;
 
@@ -253,18 +232,12 @@ app.post("/save-draft", (req, res) => {
 });
 
 
-// ----------------------
 // Health check
-// ----------------------
-
 app.get("/health", (req, res) => {
     res.send("Survey server is running.");
 });
 
-// ----------------------
 // Start server
-// ----------------------
-
 app.listen(3000, () => {
     console.log("Server running on http://localhost:3000");
 });
