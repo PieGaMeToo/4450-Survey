@@ -3,19 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <title>AI Communication Study</title>
-<style>
-  body { font-family: sans-serif; margin: 40px; max-width: 800px; }
-  textarea { width: 100%; height: 120px; margin-top: 10px; }
-  .hidden { display: none; }
-  .chat-box { border: 1px solid #ccc; padding: 10px; height: 200px; overflow-y: auto; margin-top: 10px; }
-  button { margin-top: 10px; }
-  .section { margin-top: 30px; }
-</style>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
-<h2>Multilingual Academic Communication Study</h2>
-
+  <div class="container">
+    <div class="mainHeader">
+      AI Communication Study
+    </div>
 <div id="consentSection">
   <p>Please read and agree to participate in this study.</p>
   <button id="agreeBtn">I Agree</button>
@@ -96,7 +90,9 @@ let scenarios = [
 ];
 
 function showSection(id) {
-  document.querySelectorAll("body > div").forEach(d => d.classList.add("hidden"));
+  document.querySelectorAll("#consentSection, #demographicsSection, #scenarioSection, #finalSection")
+    .forEach(d => d.classList.add("hidden"));
+
   document.getElementById(id).classList.remove("hidden");
 }
 
@@ -230,5 +226,6 @@ document.getElementById("nextScenario").onclick = async () => {
 
 </script>
 
+  </div>
 </body>
 </html>
