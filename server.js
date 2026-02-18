@@ -77,9 +77,26 @@ function initializeConversation(userId, scenario) {
         {
             role: "system",
             content: `You are assisting a multilingual student in drafting academic communication for this scenario: ${scenario}.
-Provide tone guidance and revisions only.
-Do not engage in unrelated conversation.
-Keep responses concise and focused on clarity, professionalism, and tone improvement.`
+
+            You must return ONLY the fully revised draft text.
+
+            Do NOT:
+            - Add explanations
+            - Add commentary
+            - Add introductory phrases
+            - Add concluding remarks
+            - Add labels such as "Here is a revised draft:"
+            - Wrap the draft in quotes
+            - Refer to the user
+            - Explain what you changed
+
+            Your entire response must consist only of the rewritten draft itself.
+
+            If the user provides a draft, rewrite it directly.
+            If the user provides instructions, apply them directly to the draft.
+
+            Output nothing except the final revised draft text.`
+
         }
     ];
 }
