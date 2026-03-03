@@ -229,6 +229,10 @@ document.getElementById("submitDemo").onclick = async () => {
     const chatBox = document.getElementById("chatBox");
     document.getElementById("aiInput").value = "";
 
+    // Append user message to chat
+    chatBox.innerHTML += "<div><b>You:</b> " + msg + "</div>";
+    chatBox.scrollTop = chatBox.scrollHeight;
+
     const loadingBar = document.getElementById("loadingBar");
     const loadingText = document.getElementById("loadingText");
     loadingBar.style.width = "0%";
@@ -249,7 +253,9 @@ document.getElementById("submitDemo").onclick = async () => {
     const decoder = new TextDecoder();
     let botReply = "";
     let chunkCount = 0;
-    const MAX_CHUNKS = 20; // same as backend approximate chunk count
+    const MAX_CHUNKS = 20; // approximate
+
+    const startTime = Date.now();
 
     while (true) {
         const { done, value } = await reader.read();
@@ -257,21 +263,29 @@ document.getElementById("submitDemo").onclick = async () => {
 
         const chunk = decoder.decode(value);
         const lines = chunk.split("\n").filter(Boolean);
+
         for (const line of lines) {
             if (!line.startsWith("data:")) continue;
             const data = JSON.parse(line.replace(/^data:\s*/, ""));
 
             if (data.partial) {
                 chunkCount++;
+                // append partial to botReply but don't flood chat box
+                botReply = data.partial;
+                document.getElementById("draftBox").value = botReply;
+
+                // update loading bar according to chunks received
                 const progress = Math.min(100, Math.floor((chunkCount / MAX_CHUNKS) * 100));
-                // estimate remaining time
-                const eta = ((100 - progress) / 100 * 10).toFixed(1); // rough ETA in seconds (adjust scale as needed)
                 loadingBar.style.width = progress + "%";
+
+                // dynamic ETA
+                const elapsed = (Date.now() - startTime) / 1000; // seconds
+                const eta = ((elapsed / progress) * (100 - progress)).toFixed(1);
                 loadingText.innerText = `Progress: ${progress}% - ETA: ${eta}s`;
             }
 
             if (data.done) {
-                botReply = data.reply; // final draft from server
+                botReply = data.reply; // final draft
                 document.getElementById("draftBox").value = botReply;
                 chatBox.innerHTML += "<div><b>AI:</b> " + botReply + "</div>";
                 chatBox.scrollTop = chatBox.scrollHeight;
