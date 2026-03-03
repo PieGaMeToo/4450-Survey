@@ -264,7 +264,7 @@ document.getElementById("submitDemo").onclick = async () => {
           chatBox.innerHTML += "<div><b>AI:</b> " + botReply + "</div>";
           chatBox.scrollTop = chatBox.scrollHeight;
           // simple loading bar animation
-          loadingBar.style.width = Math.min(loadingBar.offsetWidth + 5, 100) + "%";
+          loadingBar.style.width = data.progress + "%";
         }
         if (data.done) {
           loadingBar.style.width = "100%";

@@ -167,6 +167,7 @@ app.post("/survey-response", (req, res) => {
 });
 
 // SSE chat endpoint
+// SSE chat endpoint with chunk-count progress
 app.post("/chat-stream", (req, res) => {
     const { userId, message, scenario, draft } = req.body;
     if (!userId || !message || !scenario) return res.status(400).json({ error: "Missing userId, message, or scenario" });
@@ -191,6 +192,8 @@ app.post("/chat-stream", (req, res) => {
             });
 
             let botReply = "";
+            let chunkCount = 0;
+            const MAX_CHUNKS = 20; // approximate max number of chunks for progress calculation
 
             response.body.on("data", chunk => {
                 const lines = chunk.toString().split("\n").filter(Boolean);
@@ -198,11 +201,14 @@ app.post("/chat-stream", (req, res) => {
                     try {
                         const obj = JSON.parse(line);
                         if (obj.message?.content) {
-                            const text = obj.message.content;
-                            botReply += text;
+                            botReply += obj.message.content;
+                            chunkCount++;
 
-                            // send partial updates to front-end
-                            res.write(`data: ${JSON.stringify({ partial: botReply })}\n\n`);
+                            // simple progress calculation
+                            const progress = Math.min(100, Math.floor((chunkCount / MAX_CHUNKS) * 100));
+
+                            // send partial updates with progress
+                            res.write(`data: ${JSON.stringify({ partial: botReply, progress })}\n\n`);
                         }
                     } catch (err) {
                         console.error("Stream parse error:", err);
@@ -214,7 +220,7 @@ app.post("/chat-stream", (req, res) => {
                 convo.push({ role: "assistant", content: botReply });
                 const timestamp = new Date().toISOString();
 
-                // save messages and responses
+                // save messages and final response
                 db.prepare(`INSERT INTO messages (participant_id, scenario, role, content, timestamp) VALUES (?, ?, ?, ?, ?)`)
                     .run(userId, scenario, "user", `Draft:\n${draft}\nRequest:\n${message}`, timestamp);
                 db.prepare(`INSERT INTO messages (participant_id, scenario, role, content, timestamp) VALUES (?, ?, ?, ?, ?)`)
@@ -222,13 +228,14 @@ app.post("/chat-stream", (req, res) => {
                 db.prepare(`INSERT INTO survey_responses (participant_id, scenario, draft_text, used_ai_self_report, used_ai_behavioral, perceived_risk, authenticity, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
                     .run(userId, scenario, botReply, null, 1, null, null, timestamp);
 
-                // notify end of stream
-                res.write(`data: ${JSON.stringify({ done: true, reply: botReply })}\n\n`);
+                // final 100% progress
+                res.write(`data: ${JSON.stringify({ done: true, reply: botReply, progress: 100 })}\n\n`);
                 res.end();
             });
+
         } catch (err) {
             console.error(err);
-            res.write(`data: ${JSON.stringify({ error: "Chat failed" })}\n\n`);
+            res.write(`data: ${JSON.stringify({ error: "Chat failed", progress: 100 })}\n\n`);
             res.end();
         }
     })();
