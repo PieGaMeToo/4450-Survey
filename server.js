@@ -17,7 +17,7 @@ app.get("/", (req, res) => {
 });
 
 // SQLite Setup
-const db = new Database("survey.db");
+const db = new Database(path.join(__dirname, "survey.db"));
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS participants (
@@ -79,6 +79,7 @@ function initializeConversation(userId, scenario) {
             content: `You are assisting a multilingual student in drafting academic communication for this scenario: ${scenario}.
 
             You must return ONLY the fully revised draft text.
+            ONLY respond in English.
 
             Do NOT:
             - Add explanations
@@ -165,59 +166,72 @@ app.post("/survey-response", (req, res) => {
     res.json({ status: "saved" });
 });
 
-// Chat endpoint
-app.post("/chat", async (req, res) => {
+// SSE chat endpoint
+app.post("/chat-stream", (req, res) => {
     const { userId, message, scenario, draft } = req.body;
+    if (!userId || !message || !scenario) return res.status(400).json({ error: "Missing userId, message, or scenario" });
 
-    if (!userId || !message || !scenario) {
-        return res.status(400).json({ error: "Missing userId, message, or scenario" });
-    }
-
-    if (!conversations[userId] || !conversations[userId][scenario]) {
-        initializeConversation(userId, scenario);
-    }
-
+    if (!conversations[userId] || !conversations[userId][scenario]) initializeConversation(userId, scenario);
     const convo = conversations[userId][scenario];
+    convo.push({ role: "user", content: `Draft:\n${draft}\n\nUser request:\n${message}` });
 
-    convo.push({
-        role: "user",
-        content: `Draft:\n${draft}\n\nUser request:\n${message}`
+    // Set headers for SSE
+    res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive"
     });
 
-    try {
-        const response = await fetch("http://localhost:11434/api/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: "llama3",
-                messages: convo,
-                stream: false
-            })
-        });
+    (async () => {
+        try {
+            const response = await fetch("http://localhost:11434/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ model: "gemma2:2b", messages: convo, stream: true })
+            });
 
-        const data = await response.json();
-        const botReply = data.message.content;
+            let botReply = "";
 
-        convo.push({ role: "assistant", content: botReply });
+            response.body.on("data", chunk => {
+                const lines = chunk.toString().split("\n").filter(Boolean);
+                for (const line of lines) {
+                    try {
+                        const obj = JSON.parse(line);
+                        if (obj.message?.content) {
+                            const text = obj.message.content;
+                            botReply += text;
 
-        const timestamp = new Date().toISOString();
+                            // send partial updates to front-end
+                            res.write(`data: ${JSON.stringify({ partial: botReply })}\n\n`);
+                        }
+                    } catch (err) {
+                        console.error("Stream parse error:", err);
+                    }
+                }
+            });
 
-        db.prepare(`
-            INSERT INTO messages (participant_id, scenario, role, content, timestamp)
-            VALUES (?, ?, ?, ?, ?)
-        `).run(userId, scenario, "user", `Draft:\n${draft}\nRequest:\n${message}`, timestamp);
+            response.body.on("end", () => {
+                convo.push({ role: "assistant", content: botReply });
+                const timestamp = new Date().toISOString();
 
-        db.prepare(`
-            INSERT INTO messages (participant_id, scenario, role, content, timestamp)
-            VALUES (?, ?, ?, ?, ?)
-        `).run(userId, scenario, "assistant", botReply, timestamp);
+                // save messages and responses
+                db.prepare(`INSERT INTO messages (participant_id, scenario, role, content, timestamp) VALUES (?, ?, ?, ?, ?)`)
+                    .run(userId, scenario, "user", `Draft:\n${draft}\nRequest:\n${message}`, timestamp);
+                db.prepare(`INSERT INTO messages (participant_id, scenario, role, content, timestamp) VALUES (?, ?, ?, ?, ?)`)
+                    .run(userId, scenario, "assistant", botReply, timestamp);
+                db.prepare(`INSERT INTO survey_responses (participant_id, scenario, draft_text, used_ai_self_report, used_ai_behavioral, perceived_risk, authenticity, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+                    .run(userId, scenario, botReply, null, 1, null, null, timestamp);
 
-        res.json({ reply: botReply });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Chat failed" });
-    }
+                // notify end of stream
+                res.write(`data: ${JSON.stringify({ done: true, reply: botReply })}\n\n`);
+                res.end();
+            });
+        } catch (err) {
+            console.error(err);
+            res.write(`data: ${JSON.stringify({ error: "Chat failed" })}\n\n`);
+            res.end();
+        }
+    })();
 });
 
 // Save final draft

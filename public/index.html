@@ -12,7 +12,7 @@
     </div>
 <div id="consentSection">
   <p>Please read and agree to participate in this study.</p>
-  <div class="finePrint">
+  <div class="finePrint" id="scroll-section">
 
     <h4>PURPOSE OF STUDY</h4>
 
@@ -86,6 +86,8 @@
     Your participation in this study is voluntary. It is up to you to decide whether or not to take part in this study. If you decide to take part in this study, you will be asked to sign a consent form. After you sign the consent form, you are still free to withdraw at any time and without giving a reason. Withdrawing from this study will not affect the relationship you have, if any, with the researcher. If you withdraw from the study before data collection is completed, your data will be returned to you or destroyed.
     </p>
 
+    <hr>
+
     <h4>CONSENT</h4>
 
     <p>
@@ -95,23 +97,23 @@
   </div>
 
 
-  <button id="agreeBtn">I Agree</button>
+  <button id="agreeBtn" disabled>I Agree</button>
 </div>
 
 <div id="demographicsSection" class="hidden section">
   <h3>Background Questions</h3>
 
   <label>Native language(s):</label>
-  <input id="nativeLang"><br><br>
+  <input type="text" id="nativeLang" required><br><br>
 
   <label>English proficiency (1–10):</label>
-  <input type="number" id="englishProf" min="1" max="10"><br><br>
+  <input type="number" id="englishProf" min="1" max="10" required><br><br>
 
   <label>Years in English academic environment:</label>
-  <input type="number" id="yearsUS"><br><br>
+  <input type="number" id="yearsUS" required><br><br>
 
   <label>How often do you use AI writing tools? (1–10)</label>
-  <input type="number" id="aiFreq" min="1" max="10"><br><br>
+  <input type="number" id="aiFreq" min="1" max="10" required><br><br>
 
   <button id="submitDemo">Continue</button>
 </div>
@@ -128,6 +130,7 @@
     <div class="chat-box" id="chatBox"></div>
     <input id="aiInput" placeholder="Ask for feedback or revision help" style="width:80%">
     <button id="aiSend">Send</button>
+    <div id="loadingBar" style="height:4px;background:#5a67d8;width:0%;transition:width 0.2s"></div>
   </div>
 
   <div class="section">
@@ -155,6 +158,21 @@
 </div>
 
 <script>
+// Set Up Consent Form
+const scrollSection = document.getElementById('scroll-section');
+const actionButton = document.getElementById('agreeBtn');
+
+scrollSection.addEventListener('scroll', function() {
+    const atBottom = Math.ceil(scrollSection.scrollTop + scrollSection.offsetHeight) >= scrollSection.scrollHeight;
+
+    if (atBottom) {
+        actionButton.disabled = false; // Enable the button
+    } else {
+        actionButton.disabled = true; // Disable the button
+    }
+});
+
+
 let aiUsedBehaviorally = false;
 let participantId = localStorage.getItem("pid");
 
@@ -184,6 +202,77 @@ document.getElementById("agreeBtn").onclick = () => {
 };
 
 document.getElementById("submitDemo").onclick = async () => {
+  const nativeLangText = document.getElementById("nativeLang").value.trim();
+  const englishProf = document.getElementById("englishProf").value;
+  const yearsUS = document.getElementById("yearsUS").value;
+  const aiFreq = document.getElementById("aiFreq").value;
+
+  if (!nativeLangText || !englishProf || !yearsUS || !aiFreq) {
+    alert("Please complete all demographic fields.");
+    return;
+  }
+
+  if(englishProf < 1 || englishProf > 10 || yearsUS < 0 || aiFreq < 1 || aiFreq > 10) {
+    alert("Please ensure all values are valid.");
+    return;
+  }
+
+  document.getElementById("aiSend").onclick = async () => {
+    const msg = document.getElementById("aiInput").value;
+    if (!msg) return;
+
+    aiUsedBehaviorally = true;
+
+    const draftText = document.getElementById("draftBox").value;
+    const chatBox = document.getElementById("chatBox");
+    chatBox.innerHTML += "<div><b>You:</b> " + msg + "</div>";
+    document.getElementById("aiInput").value = "";
+
+    // show loading bar
+    const loadingBar = document.getElementById("loadingBar");
+    loadingBar.style.width = "20%"; // start
+
+    const controller = new AbortController();
+    const response = await fetch("/chat-stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: participantId,
+        message: msg,
+        scenario: scenarios[currentScenario].text,
+        draft: draftText
+      }),
+      signal: controller.signal
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let botReply = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split("\n").filter(Boolean);
+      for (const line of lines) {
+        if (!line.startsWith("data:")) continue;
+        const data = JSON.parse(line.replace(/^data:\s*/, ""));
+        if (data.partial) {
+          botReply = data.partial;
+          document.getElementById("draftBox").value = botReply;
+          chatBox.innerHTML += "<div><b>AI:</b> " + botReply + "</div>";
+          chatBox.scrollTop = chatBox.scrollHeight;
+          // simple loading bar animation
+          loadingBar.style.width = Math.min(loadingBar.offsetWidth + 5, 100) + "%";
+        }
+        if (data.done) {
+          loadingBar.style.width = "100%";
+        }
+      }
+    }
+  };
+
   await fetch("/demographics", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
@@ -217,38 +306,6 @@ function loadScenario() {
 
   showSection("scenarioSection");
 }
-
-document.getElementById("aiSend").onclick = async () => {
-  const msg = document.getElementById("aiInput").value;
-  if (!msg) return;
-
-  aiUsedBehaviorally = true;
-
-  const draftText = document.getElementById("draftBox").value;
-  const chatBox = document.getElementById("chatBox");
-
-  chatBox.innerHTML += "<div><b>You:</b> " + msg + "</div>";
-  document.getElementById("aiInput").value = "";
-
-  const response = await fetch("/chat", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      userId: participantId,
-      message: msg,
-      scenario: scenarios[currentScenario].text,
-      draft: draftText
-    })
-  });
-
-  const data = await response.json();
-
-  if (data.reply) {
-    document.getElementById("draftBox").value = data.reply;
-    chatBox.innerHTML += "<div><b>AI:</b> " + data.reply + "</div>";
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }
-};
 
 document.getElementById("nextScenario").onclick = async () => {
 
