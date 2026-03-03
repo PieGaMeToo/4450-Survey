@@ -130,7 +130,10 @@
     <div class="chat-box" id="chatBox"></div>
     <input id="aiInput" placeholder="Ask for feedback or revision help" style="width:80%">
     <button id="aiSend">Send</button>
-    <div id="loadingBar" style="height:4px;background:#5a67d8;width:0%;transition:width 0.2s"></div>
+    <div id="loadingContainer" style="display:flex;align-items:center;">
+      <div id="loadingBar" style="height:4px;background:#5a67d8;width:0%;transition:width 0.2s;flex:1;"></div>
+      <span id="loadingText" style="margin-left:8px;">0%</span>
+    </div>
   </div>
 
   <div class="section">
@@ -222,56 +225,63 @@ document.getElementById("submitDemo").onclick = async () => {
     if (!msg) return;
 
     aiUsedBehaviorally = true;
-
     const draftText = document.getElementById("draftBox").value;
     const chatBox = document.getElementById("chatBox");
-    chatBox.innerHTML += "<div><b>You:</b> " + msg + "</div>";
     document.getElementById("aiInput").value = "";
 
-    // show loading bar
     const loadingBar = document.getElementById("loadingBar");
-    loadingBar.style.width = "20%"; // start
+    const loadingText = document.getElementById("loadingText");
+    loadingBar.style.width = "0%";
+    loadingText.innerText = "Starting...";
 
-    const controller = new AbortController();
     const response = await fetch("/chat-stream", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: participantId,
-        message: msg,
-        scenario: scenarios[currentScenario].text,
-        draft: draftText
-      }),
-      signal: controller.signal
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            userId: participantId,
+            message: msg,
+            scenario: scenarios[currentScenario].text,
+            draft: draftText
+        })
     });
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let botReply = "";
+    let chunkCount = 0;
+    const MAX_CHUNKS = 20; // same as backend approximate chunk count
 
     while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      const chunk = decoder.decode(value);
-      const lines = chunk.split("\n").filter(Boolean);
-      for (const line of lines) {
-        if (!line.startsWith("data:")) continue;
-        const data = JSON.parse(line.replace(/^data:\s*/, ""));
-        if (data.partial) {
-          botReply = data.partial;
-          document.getElementById("draftBox").value = botReply;
-          chatBox.innerHTML += "<div><b>AI:</b> " + botReply + "</div>";
-          chatBox.scrollTop = chatBox.scrollHeight;
-          // simple loading bar animation
-          loadingBar.style.width = data.progress + "%";
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter(Boolean);
+        for (const line of lines) {
+            if (!line.startsWith("data:")) continue;
+            const data = JSON.parse(line.replace(/^data:\s*/, ""));
+
+            if (data.partial) {
+                chunkCount++;
+                const progress = Math.min(100, Math.floor((chunkCount / MAX_CHUNKS) * 100));
+                // estimate remaining time
+                const eta = ((100 - progress) / 100 * 10).toFixed(1); // rough ETA in seconds (adjust scale as needed)
+                loadingBar.style.width = progress + "%";
+                loadingText.innerText = `Progress: ${progress}% - ETA: ${eta}s`;
+            }
+
+            if (data.done) {
+                botReply = data.reply; // final draft from server
+                document.getElementById("draftBox").value = botReply;
+                chatBox.innerHTML += "<div><b>AI:</b> " + botReply + "</div>";
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+                loadingBar.style.width = "100%";
+                loadingText.innerText = "Done";
+            }
         }
-        if (data.done) {
-          loadingBar.style.width = "100%";
-        }
-      }
     }
-  };
+};
 
   await fetch("/demographics", {
     method: "POST",
