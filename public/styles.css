@@ -1,14 +1,81 @@
-<div class="container">
-  <div class="mainHeader">Chat</div>
+/* Chat container tweaks */
+.chat-box {
+  border: 1px solid #d1d5db;
+  padding: 15px;
+  height: 500px; /* taller for more conversation */
+  overflow-y: auto;
+  margin-top: 10px;
+  border-radius: 12px;
+  background: #fefefe;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
-  <div style="display:flex; gap:20px; height:500px;">
+/* Individual chat messages */
+.chat-message {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  line-height: 1.4;
+  font-size: 14px;
+  word-wrap: break-word;
+}
 
-    <div class="chat-box" id="chatBox" style="flex:2;"></div>
+.chat-message.user {
+  align-self: flex-end;
+  background: #5a67d8;
+  color: white;
+  border-bottom-right-radius: 0;
+}
 
-    <div style="flex:1; display:flex; flex-direction:column;">
-      <textarea id="userInput" placeholder="Type message..."></textarea>
-      <button id="sendBtn">Send</button>
-    </div>
+.chat-message.ai {
+  align-self: flex-start;
+  background: #e5e7eb;
+  color: #1f2937;
+  border-bottom-left-radius: 0;
+}
 
-  </div>
-</div>
+/* Input panel */
+.input-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.input-panel textarea {
+  flex: 1;
+  height: 100px;
+  resize: none;
+}
+
+.input-panel button {
+  align-self: flex-end;
+}
+
+/* Language selection */
+#languageSelect, #otherLanguageInput {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  margin-top: 5px;
+  width: 100%;
+  max-width: 250px;
+  background: #fff;
+}
+
+/* Scrollbar styling for chat */
+.chat-box::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-box::-webkit-scrollbar-thumb {
+  background-color: rgba(90,103,216,0.5);
+  border-radius: 4px;
+}
+
+.chat-box::-webkit-scrollbar-track {
+  background: #f4f6f9;
+}

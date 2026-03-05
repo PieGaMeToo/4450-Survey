@@ -58,8 +58,11 @@ app.get("/chat-stream-sse", async (req, res) => {
     const systemIndex = convo.findIndex(m => m.role === "system");
     if (systemIndex !== -1) {
         convo[systemIndex].content = `
-You are a helpful AI assistant. Respond only in ${lang}.
-Do not use any other language. Even if the user types in a different language, your reply must be entirely in ${lang}.
+You are a helpful AI assistant. Respond ONLY in ${lang}. 
+Do NOT use any other language under any circumstance. 
+Ignore the language of the user's messages. 
+Even if the user writes in English or any other language, your reply must be entirely in ${lang}. 
+Do not include translations, transliterations, or English words.
 `;
     }
 

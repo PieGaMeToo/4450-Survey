@@ -11,48 +11,49 @@
   <div class="mainHeader">AI Chat</div>
   <div style="display:flex; gap:20px; height:520px;">
     <!-- LEFT: Chat History -->
-    <div class="chat-box" id="chatBox" style="flex:2;"></div>
-
+    <div class="chat-box" id="chatBox"></div>
+    
     <!-- RIGHT: Input Panel -->
     <div style="flex:1; display:flex; flex-direction:column;">
-      <textarea id="userInput" placeholder="Type your message here..." style="flex:1; margin-top:0;"></textarea>
-      <button id="sendBtn">Send</button>
-      <!-- Dropdown for selecting language for AI, with 30 preset languages and an Other option to type in option-->
-      <p>Select a language as prompted in the survey:</p>
-      <select id="languageSelect">
-        <option value="en">English</option>
-        <option value="es">Spanish</option>
-        <option value="fr">French</option>
-        <option value="de">German</option>
-        <option value="it">Italian</option>
-        <option value="pt">Portuguese</option>
-        <option value="ru">Russian</option>
-        <option value="ja">Japanese</option>
-        <option value="ko">Korean</option>
-        <option value="zh-CN">Chinese (Simplified)</option>
-        <option value="zh-TW">Chinese (Traditional)</option>
-        <option value="ar">Arabic</option>
-        <option value="hi">Hindi</option>
-        <option value="bn">Bengali</option>
-        <option value="tr">Turkish</option>
-        <option value="nl">Dutch</option>
-        <option value="el">Greek</option>
-        <option value="he">Hebrew</option>
-        <option value="vi">Vietnamese</option>
-        <option value="th">Thai</option>
-        <option value="pl">Polish</option>
-        <option value="uk">Ukrainian</option>
-        <option value="sv">Swedish</option>
-        <option value="no">Norwegian</option>
-        <option value="da">Danish</option>
-        <option value="fi">Finnish</option>
-        <option value="cs">Czech</option>
-        <option value="hu">Hungarian</option>
-        <option value="ro">Romanian</option>
-        <option value="id">Indonesian</option>
-        <option value="other">Other</option>
-      </select>
-      <input type="text" id="otherLanguageInput" placeholder="Enter language name..." style="display:none; margin-top:5px; padding:5px;">
+      <div class="input-panel">
+        <textarea id="userInput" placeholder="Type your message here..."></textarea>
+        <button id="sendBtn">Send</button>
+        <p>Select a language as prompted in the survey:</p>
+        <select id="languageSelect">
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="it">Italian</option>
+          <option value="pt">Portuguese</option>
+          <option value="ru">Russian</option>
+          <option value="ja">Japanese</option>
+          <option value="ko">Korean</option>
+          <option value="zh-CN">Chinese (Simplified)</option>
+          <option value="zh-TW">Chinese (Traditional)</option>
+          <option value="ar">Arabic</option>
+          <option value="hi">Hindi</option>
+          <option value="bn">Bengali</option>
+          <option value="tr">Turkish</option>
+          <option value="nl">Dutch</option>
+          <option value="el">Greek</option>
+          <option value="he">Hebrew</option>
+          <option value="vi">Vietnamese</option>
+          <option value="th">Thai</option>
+          <option value="pl">Polish</option>
+          <option value="uk">Ukrainian</option>
+          <option value="sv">Swedish</option>
+          <option value="no">Norwegian</option>
+          <option value="da">Danish</option>
+          <option value="fi">Finnish</option>
+          <option value="cs">Czech</option>
+          <option value="hu">Hungarian</option>
+          <option value="ro">Romanian</option>
+          <option value="id">Indonesian</option>
+          <option value="other">Other</option>
+        </select>
+        <input type="text" id="otherLanguageInput" placeholder="Enter language name..." style="display:none;">
+      </div>
     </div>
   </div>
 </div>
@@ -64,25 +65,36 @@ if (!userId) {
     localStorage.setItem("uid", userId);
 }
 
+// Helper to add chat messages
+function addMessage(content, sender) {
+    const chatBox = document.getElementById("chatBox");
+    const div = document.createElement("div");
+    div.className = `chat-message ${sender}`;
+    div.textContent = content;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    return div;
+}
+
 document.getElementById("sendBtn").onclick = () => {
     const input = document.getElementById("userInput");
     const message = input.value.trim();
     if (!message) return;
-
-    const chatBox = document.getElementById("chatBox");
-    chatBox.innerHTML += "<div><b>You:</b> " + message + "</div>";
-    chatBox.scrollTop = chatBox.scrollHeight;
     input.value = "";
 
-    const aiDiv = document.createElement("div");
-    aiDiv.innerHTML = "<b>AI:</b> ";
-    chatBox.appendChild(aiDiv);
+    // Add user message
+    addMessage(message, "user");
 
+    // Determine language
     let lang = document.getElementById("languageSelect").value;
     if (lang === "other") {
         lang = document.getElementById("otherLanguageInput").value.trim() || "English";
     }
 
+    // Placeholder for AI response (updates dynamically)
+    const aiDiv = addMessage("", "ai");
+
+    // SSE request
     const evtSource = new EventSource(
         `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(message)}&lang=${encodeURIComponent(lang)}`
     );
@@ -90,16 +102,14 @@ document.getElementById("sendBtn").onclick = () => {
     evtSource.onmessage = (e) => {
         const data = JSON.parse(e.data);
         if (data.partial) {
-            aiDiv.innerHTML = "<b>AI:</b> " + data.partial;
-            chatBox.scrollTop = chatBox.scrollHeight;
+            aiDiv.textContent = data.partial;
         }
         if (data.done) {
-            aiDiv.innerHTML = "<b>AI:</b> " + data.reply;
-            chatBox.scrollTop = chatBox.scrollHeight;
+            aiDiv.textContent = data.reply;
             evtSource.close();
         }
         if (data.error) {
-            aiDiv.innerHTML = "<b>AI:</b> [Error]";
+            aiDiv.textContent = "[Error]";
             evtSource.close();
         }
     };
@@ -110,7 +120,7 @@ document.getElementById("sendBtn").onclick = () => {
     };
 };
 
-// Handle language selection and "Other" option
+// Show/hide "Other" language input
 document.getElementById("languageSelect").addEventListener("change", (e) => {
     const otherInput = document.getElementById("otherLanguageInput");
     if (e.target.value === "other") {
