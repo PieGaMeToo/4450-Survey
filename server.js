@@ -38,7 +38,9 @@ CREATE TABLE IF NOT EXISTS messages (
 let conversations = {};
 function initializeConversation(userId, lang) {
     conversations[userId] = [
-        { role: "system", content: `You are a helpful AI assistant. Respond clearly and directly in ${lang}.` }
+        {
+            role: "system", content: `You are a helpful AI assistant. Respond clearly and directly in ${lang}. Do not use any other language in the message other than ${lang},
+        regardless of what language the user uses in their prompt.` }
     ];
 }
 
