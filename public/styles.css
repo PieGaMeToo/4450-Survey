@@ -18,7 +18,7 @@ body {
 }
 
 .chat-container { flex:2; display:flex; flex-direction:column; }
-.draft-container { flex:1; display:flex; flex-direction:column; }
+.draft-container { flex:1; display:flex; flex-direction:column; height:100%; }
 
 .chat-box {
   flex:1;
