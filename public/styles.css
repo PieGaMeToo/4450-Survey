@@ -14,7 +14,7 @@ body {
   display: flex;
   gap: 20px;
   padding: 20px;
-  height: 100vh; /* full viewport height */
+  height: 90vh; /* full viewport height */
 }
 
 .chat-container {
