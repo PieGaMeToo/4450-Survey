@@ -18,6 +18,7 @@
       <textarea id="userInput" placeholder="Type your message here..." style="flex:1; margin-top:0;"></textarea>
       <button id="sendBtn">Send</button>
       <!-- Dropdown for selecting language for AI, with 30 preset languages and an Other option to type in option-->
+      <p>Select a language as prompted in the survey:</p>
       <select id="languageSelect">
         <option value="en">English</option>
         <option value="es">Spanish</option>
@@ -76,6 +77,11 @@ document.getElementById("sendBtn").onclick = () => {
     const aiDiv = document.createElement("div");
     aiDiv.innerHTML = "<b>AI:</b> ";
     chatBox.appendChild(aiDiv);
+
+    let lang = document.getElementById("languageSelect").value;
+    if (lang === "other") {
+        lang = document.getElementById("otherLanguageInput").value.trim() || "English";
+    }
 
     // SSE connection
     const evtSource = new EventSource(`/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(message)}`);

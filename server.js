@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS messages (
 let conversations = {};
 function initializeConversation(userId) {
     conversations[userId] = [
-        { role: "system", content: "You are a helpful AI assistant. Respond clearly and directly." }
+        { role: "system", content: `You are a helpful AI assistant. Respond clearly and directly in ${lang}.` }
     ];
 }
 
@@ -46,6 +46,7 @@ function initializeConversation(userId) {
 app.get("/chat-stream-sse", async (req, res) => {
     const userId = req.query.userId;
     const message = req.query.message;
+    const lang = req.query.lang || "English";
 
     if (!userId || !message) {
         return res.status(400).end();
