@@ -2,57 +2,66 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>AI Chat</title>
+<title>AI Chat with Draft</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <div class="container">
   <div class="mainHeader">AI Chat</div>
-  <div style="display:flex; gap:20px; height:520px;">
-    <!-- LEFT: Chat History -->
-    <div class="chat-box" id="chatBox" style="flex:2;"></div>
 
-    <!-- RIGHT: Input Panel -->
-    <div style="flex:1; display:flex; flex-direction:column;">
-      <textarea id="userInput" placeholder="Type your message here..." style="flex:1; margin-top:0;"></textarea>
-      <button id="sendBtn">Send</button>
-      <!-- Dropdown for selecting language -->
-      <p>Select a language as prompted in the survey:</p>
-      <select id="languageSelect">
-        <option value="en">English</option>
-        <option value="es">Spanish</option>
-        <option value="fr">French</option>
-        <option value="de">German</option>
-        <option value="it">Italian</option>
-        <option value="pt">Portuguese</option>
-        <option value="ru">Russian</option>
-        <option value="ja">Japanese</option>
-        <option value="ko">Korean</option>
-        <option value="zh-CN">Chinese (Simplified)</option>
-        <option value="zh-TW">Chinese (Traditional)</option>
-        <option value="ar">Arabic</option>
-        <option value="hi">Hindi</option>
-        <option value="bn">Bengali</option>
-        <option value="tr">Turkish</option>
-        <option value="nl">Dutch</option>
-        <option value="el">Greek</option>
-        <option value="he">Hebrew</option>
-        <option value="vi">Vietnamese</option>
-        <option value="th">Thai</option>
-        <option value="pl">Polish</option>
-        <option value="uk">Ukrainian</option>
-        <option value="sv">Swedish</option>
-        <option value="no">Norwegian</option>
-        <option value="da">Danish</option>
-        <option value="fi">Finnish</option>
-        <option value="cs">Czech</option>
-        <option value="hu">Hungarian</option>
-        <option value="ro">Romanian</option>
-        <option value="id">Indonesian</option>
-        <option value="other">Other</option>
-      </select>
-      <input type="text" id="otherLanguageInput" placeholder="Enter language name..." style="display:none; margin-top:5px; padding:5px;">
+  <!-- Chat + Draft layout -->
+  <div class="layout">
+    <!-- LEFT: Chat history -->
+    <div class="chat-container">
+      <div class="chat-box" id="chatBox"></div>
+
+      <!-- AI input panel -->
+      <div class="input-panel">
+        <textarea id="aiInput" placeholder="Type your message to AI..."></textarea>
+        <p>Select a language:</p>
+        <select id="languageSelect">
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="it">Italian</option>
+          <option value="pt">Portuguese</option>
+          <option value="ru">Russian</option>
+          <option value="ja">Japanese</option>
+          <option value="ko">Korean</option>
+          <option value="zh-CN">Chinese (Simplified)</option>
+          <option value="zh-TW">Chinese (Traditional)</option>
+          <option value="ar">Arabic</option>
+          <option value="hi">Hindi</option>
+          <option value="bn">Bengali</option>
+          <option value="tr">Turkish</option>
+          <option value="nl">Dutch</option>
+          <option value="el">Greek</option>
+          <option value="he">Hebrew</option>
+          <option value="vi">Vietnamese</option>
+          <option value="th">Thai</option>
+          <option value="pl">Polish</option>
+          <option value="uk">Ukrainian</option>
+          <option value="sv">Swedish</option>
+          <option value="no">Norwegian</option>
+          <option value="da">Danish</option>
+          <option value="fi">Finnish</option>
+          <option value="cs">Czech</option>
+          <option value="hu">Hungarian</option>
+          <option value="ro">Romanian</option>
+          <option value="id">Indonesian</option>
+          <option value="other">Other</option>
+        </select>
+        <input type="text" id="otherLanguageInput" placeholder="Enter language..." style="display:none;">
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: Outline / Draft box -->
+    <div class="draft-container">
+      <p><b>Your Outline / Draft:</b></p>
+      <textarea id="draftBox" placeholder="Write or compile your draft here..."></textarea>
     </div>
   </div>
 </div>
@@ -64,13 +73,10 @@ if (!userId) {
     localStorage.setItem("uid", userId);
 }
 
-// Format AI responses: bold + split into paragraphs
+// Format AI responses
 function formatResponse(text) {
-    // 1. Replace **bold** with <b>bold</b>
     let html = text.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
-    // 2. Split into paragraphs by line breaks or bullet markers
     let lines = html.split(/\n|\*/).filter(l => l.trim() !== "");
-    // Wrap each line in <p>
     return lines.map(l => `<p>${l.trim()}</p>`).join("");
 }
 
@@ -86,11 +92,16 @@ function addMessage(content, sender) {
 
 // Send button click
 document.getElementById("sendBtn").onclick = () => {
-    const input = document.getElementById("userInput");
+    const input = document.getElementById("aiInput");
     const message = input.value.trim();
     if (!message) return;
 
-    // Add user message bubble
+    // Include current draft as context
+    const draftContent = document.getElementById("draftBox").value.trim();
+    const fullMessage = draftContent 
+        ? message + "\n\nCurrent Draft:\n" + draftContent 
+        : message;
+
     addMessage(message, "user");
     input.value = "";
 
@@ -99,15 +110,13 @@ document.getElementById("sendBtn").onclick = () => {
         lang = document.getElementById("otherLanguageInput").value.trim() || "English";
     }
 
-    // SSE connection
     const evtSource = new EventSource(
-        `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(message)}&lang=${encodeURIComponent(lang)}`
+        `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(fullMessage)}&lang=${encodeURIComponent(lang)}`
     );
 
     evtSource.onmessage = (e) => {
         const data = JSON.parse(e.data);
         if (data.partial) {
-            // Update last AI bubble or create one
             if (!chatBox.lastChild || !chatBox.lastChild.classList.contains("ai")) {
                 addMessage(data.partial, "ai");
             } else {

@@ -1,4 +1,3 @@
-// server.js
 const express = require("express");
 const fetch = require("node-fetch");
 const cors = require("cors");
@@ -8,15 +7,8 @@ const Database = require("better-sqlite3");
 const app = express();
 app.use(express.json());
 app.use(cors());
-
-// Serve static frontend
 app.use(express.static(path.join(__dirname, "public")));
 
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-// SQLite Setup
 const db = new Database(path.join(__dirname, "survey.db"));
 
 db.exec(`
@@ -24,7 +16,6 @@ CREATE TABLE IF NOT EXISTS conversations (
   user_id TEXT PRIMARY KEY,
   created_at TEXT
 );
-
 CREATE TABLE IF NOT EXISTS messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id TEXT,
@@ -34,7 +25,6 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 `);
 
-// Conversation memory
 let conversations = {};
 function initializeConversation(userId) {
     conversations[userId] = [
@@ -42,7 +32,6 @@ function initializeConversation(userId) {
     ];
 }
 
-// SSE chat endpoint (GET)
 app.get("/chat-stream-sse", async (req, res) => {
     const userId = req.query.userId;
     const message = req.query.message;
@@ -54,28 +43,24 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     const convo = conversations[userId];
 
-    // Update system prompt dynamically for this message
     const systemIndex = convo.findIndex(m => m.role === "system");
     if (systemIndex !== -1) {
         convo[systemIndex].content = `
 You are a helpful AI assistant. Respond ONLY in ${lang}. 
-Do NOT use any other language under any circumstance. 
-Answer in full sentences. 
-Provide detailed, explanatory, and informative responses. 
-Even if the user writes in English or any other language, your reply must be entirely in ${lang}.
+Do NOT use any other language. 
+Use full, detailed sentences.
+Follow instructions in the user's message. 
+Incorporate any draft content included in the message as context, but do not rewrite it unless requested.
 `;
     }
 
-    // Add the user message
     convo.push({ role: "user", content: message });
 
-    // SSE headers
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.flushHeaders();
-
-    res.write(":\n\n"); // comment line to keep connection alive
+    res.write(":\n\n");
 
     try {
         const ollamaResponse = await fetch("http://localhost:11434/api/chat", {
@@ -106,18 +91,14 @@ Even if the user writes in English or any other language, your reply must be ent
         }
 
         convo.push({ role: "assistant", content: botReply });
-
-        // Save messages
         const timestamp = new Date().toISOString();
         db.prepare(`INSERT INTO messages (user_id, role, content, timestamp) VALUES (?, ?, ?, ?)`)
             .run(userId, "user", message, timestamp);
         db.prepare(`INSERT INTO messages (user_id, role, content, timestamp) VALUES (?, ?, ?, ?)`)
             .run(userId, "assistant", botReply, timestamp);
 
-        // Final SSE message
         res.write(`data: ${JSON.stringify({ done: true, reply: botReply })}\n\n`);
         res.end();
-
     } catch (err) {
         console.error("Chat error:", err);
         res.write(`data: ${JSON.stringify({ error: "Chat failure" })}\n\n`);
@@ -125,9 +106,6 @@ Even if the user writes in English or any other language, your reply must be ent
     }
 });
 
-// Other endpoints (demographics, survey-response, save-draft) remain unchanged
-// Health check
-app.get("/health", (req, res) => res.send("Survey server is running."));
+app.get("/health", (req, res) => res.send("Survey server running."));
 
-// Start server
 app.listen(3000, () => console.log("Server running on http://localhost:3000"));
