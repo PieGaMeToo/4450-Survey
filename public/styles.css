@@ -14,14 +14,36 @@ body {
   display: flex;
   gap: 20px;
   padding: 20px;
-  height: calc(100vh - 100px);
+  height: 100vh; /* full viewport height */
 }
 
-.chat-container { flex:2; display:flex; flex-direction:column; }
-.draft-container { flex:1; display:flex; flex-direction:column; height:100%; }
+.chat-container {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.draft-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* full height */
+}
+
+.draft-container textarea#draftBox {
+  flex: 1;            /* fills vertical space */
+  height: 100%;       /* ensures full container height */
+  resize: vertical;
+  padding: 12px;
+  font-size: 14px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
 
 .chat-box {
-  flex:1;
+  flex: 1;
   padding: 15px;
   border-radius: 12px;
   background: #fefefe;
