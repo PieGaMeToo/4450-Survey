@@ -17,7 +17,7 @@
     <div style="flex:1; display:flex; flex-direction:column;">
       <textarea id="userInput" placeholder="Type your message here..." style="flex:1; margin-top:0;"></textarea>
       <button id="sendBtn">Send</button>
-      <!-- Dropdown for selecting language for AI, with 30 preset languages and an Other option to type in option-->
+      <!-- Dropdown for selecting language -->
       <p>Select a language as prompted in the survey:</p>
       <select id="languageSelect">
         <option value="en">English</option>
@@ -64,25 +64,42 @@ if (!userId) {
     localStorage.setItem("uid", userId);
 }
 
+// Format AI responses: bold + split into paragraphs
+function formatResponse(text) {
+    // 1. Replace **bold** with <b>bold</b>
+    let html = text.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
+    // 2. Split into paragraphs by line breaks or bullet markers
+    let lines = html.split(/\n|\*/).filter(l => l.trim() !== "");
+    // Wrap each line in <p>
+    return lines.map(l => `<p>${l.trim()}</p>`).join("");
+}
+
+// Add message to chat box
+const chatBox = document.getElementById("chatBox");
+function addMessage(content, sender) {
+    const msgDiv = document.createElement("div");
+    msgDiv.className = `chat-message ${sender}`;
+    msgDiv.innerHTML = formatResponse(content);
+    chatBox.appendChild(msgDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Send button click
 document.getElementById("sendBtn").onclick = () => {
     const input = document.getElementById("userInput");
     const message = input.value.trim();
     if (!message) return;
 
-    const chatBox = document.getElementById("chatBox");
-    chatBox.innerHTML += "<div><b>You:</b> " + message + "</div>";
-    chatBox.scrollTop = chatBox.scrollHeight;
+    // Add user message bubble
+    addMessage(message, "user");
     input.value = "";
-
-    const aiDiv = document.createElement("div");
-    aiDiv.innerHTML = "<b>AI:</b> ";
-    chatBox.appendChild(aiDiv);
 
     let lang = document.getElementById("languageSelect").value;
     if (lang === "other") {
         lang = document.getElementById("otherLanguageInput").value.trim() || "English";
     }
 
+    // SSE connection
     const evtSource = new EventSource(
         `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(message)}&lang=${encodeURIComponent(lang)}`
     );
@@ -90,16 +107,19 @@ document.getElementById("sendBtn").onclick = () => {
     evtSource.onmessage = (e) => {
         const data = JSON.parse(e.data);
         if (data.partial) {
-            aiDiv.innerHTML = "<b>AI:</b> " + data.partial;
-            chatBox.scrollTop = chatBox.scrollHeight;
+            // Update last AI bubble or create one
+            if (!chatBox.lastChild || !chatBox.lastChild.classList.contains("ai")) {
+                addMessage(data.partial, "ai");
+            } else {
+                chatBox.lastChild.innerHTML = formatResponse(data.partial);
+            }
         }
         if (data.done) {
-            aiDiv.innerHTML = "<b>AI:</b> " + data.reply;
-            chatBox.scrollTop = chatBox.scrollHeight;
+            if (!chatBox.lastChild.classList.contains("ai")) addMessage(data.reply, "ai");
             evtSource.close();
         }
         if (data.error) {
-            aiDiv.innerHTML = "<b>AI:</b> [Error]";
+            addMessage("[Error]", "ai");
             evtSource.close();
         }
     };
@@ -110,7 +130,7 @@ document.getElementById("sendBtn").onclick = () => {
     };
 };
 
-// Handle language selection and "Other" option
+// Handle "Other" language input
 document.getElementById("languageSelect").addEventListener("change", (e) => {
     const otherInput = document.getElementById("otherLanguageInput");
     if (e.target.value === "other") {
