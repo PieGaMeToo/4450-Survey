@@ -27,7 +27,7 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100vh; /* full height */
+  height: 85vh;
 }
 
 .draft-container textarea#draftBox {
