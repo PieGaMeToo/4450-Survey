@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS messages (
 
 // Conversation memory
 let conversations = {};
-function initializeConversation(userId) {
+function initializeConversation(userId, lang) {
     conversations[userId] = [
         { role: "system", content: `You are a helpful AI assistant. Respond clearly and directly in ${lang}.` }
     ];
@@ -52,7 +52,7 @@ app.get("/chat-stream-sse", async (req, res) => {
         return res.status(400).end();
     }
 
-    if (!conversations[userId]) initializeConversation(userId);
+    if (!conversations[userId]) initializeConversation(userId, lang);
     const convo = conversations[userId];
     convo.push({ role: "user", content: message });
 

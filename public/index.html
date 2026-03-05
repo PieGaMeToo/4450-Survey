@@ -84,7 +84,7 @@ document.getElementById("sendBtn").onclick = () => {
     }
 
     // SSE connection
-    const evtSource = new EventSource(`/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(message)}`);
+    const evtSource = new EventSource(`/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(message)}&lang=${encodeURIComponent(lang)}`);
 
     evtSource.onmessage = (e) => {
         const data = JSON.parse(e.data);
