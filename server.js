@@ -36,11 +36,9 @@ CREATE TABLE IF NOT EXISTS messages (
 
 // Conversation memory
 let conversations = {};
-function initializeConversation(userId, lang) {
+function initializeConversation(userId) {
     conversations[userId] = [
-        {
-            role: "system", content: `You are a helpful AI assistant. Respond clearly and directly in ${lang}. Do not use any other language in the message other than ${lang},
-        regardless of what language the user uses in their prompt.` }
+        { role: "system", content: "You are a helpful AI assistant. Respond clearly and directly in the language specified for each user message." }
     ];
 }
 
@@ -50,12 +48,22 @@ app.get("/chat-stream-sse", async (req, res) => {
     const message = req.query.message;
     const lang = req.query.lang || "English";
 
-    if (!userId || !message) {
-        return res.status(400).end();
+    if (!userId || !message) return res.status(400).end();
+
+    if (!conversations[userId]) initializeConversation(userId);
+
+    const convo = conversations[userId];
+
+    // Update system prompt dynamically for this message
+    const systemIndex = convo.findIndex(m => m.role === "system");
+    if (systemIndex !== -1) {
+        convo[systemIndex].content = `
+You are a helpful AI assistant. Respond only in ${lang}.
+Do not use any other language. Even if the user types in a different language, your reply must be entirely in ${lang}.
+`;
     }
 
-    if (!conversations[userId]) initializeConversation(userId, lang);
-    const convo = conversations[userId];
+    // Add the user message
     convo.push({ role: "user", content: message });
 
     // SSE headers

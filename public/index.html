@@ -83,8 +83,9 @@ document.getElementById("sendBtn").onclick = () => {
         lang = document.getElementById("otherLanguageInput").value.trim() || "English";
     }
 
-    // SSE connection
-    const evtSource = new EventSource(`/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(message)}&lang=${encodeURIComponent(lang)}`);
+    const evtSource = new EventSource(
+        `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(message)}&lang=${encodeURIComponent(lang)}`
+    );
 
     evtSource.onmessage = (e) => {
         const data = JSON.parse(e.data);
