@@ -60,9 +60,9 @@ app.get("/chat-stream-sse", async (req, res) => {
         convo[systemIndex].content = `
 You are a helpful AI assistant. Respond ONLY in ${lang}. 
 Do NOT use any other language under any circumstance. 
-Ignore the language of the user's messages. 
-Even if the user writes in English or any other language, your reply must be entirely in ${lang}. 
-Do not include translations, transliterations, or English words.
+Answer in full sentences. 
+Provide detailed, explanatory, and informative responses. 
+Even if the user writes in English or any other language, your reply must be entirely in ${lang}.
 `;
     }
 
