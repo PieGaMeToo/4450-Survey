@@ -115,7 +115,7 @@ Use any draft text as context but do not rewrite it unless asked.
 
         if (!isNaN(idx) && conversations[userId]) {
 
-            const convoIndex = idx + 1; // account for system message
+            const convoIndex = idx + 1;
 
             conversations[userId] =
                 conversations[userId].slice(0, convoIndex);

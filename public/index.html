@@ -290,19 +290,27 @@ function sendMessage() {
     if (!message) return;
 
 
-    if(editingIndex !== null){
+    if (editingIndex !== null) {
 
       const messages = Array.from(chatBox.children);
+
+      let deleteMode = false;
 
       messages.forEach(msg => {
 
         const idx = parseInt(msg.dataset.index);
 
-        if(!isNaN(idx) && idx >= editingIndex){
+        if (idx === editingIndex) {
+            deleteMode = true;
+        }
+
+        if (deleteMode) {
             msg.remove();
         }
 
       });
+
+    }
 
     }
     aiGenerating = true;
