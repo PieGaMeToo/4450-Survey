@@ -101,6 +101,7 @@ app.get("/chat-stream-sse", async (req, res) => {
         convo[systemIndex].content = `
 You are a helpful AI assistant.
 Respond ONLY in ${lang}.
+Even if the user asks you to speak another language, only respond in ${lang}.
 Use clear full sentences.
 Follow the instructions in the user's message.
 Use any draft text as context but do not rewrite it unless asked.
