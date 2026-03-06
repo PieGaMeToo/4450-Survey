@@ -311,8 +311,9 @@ function sendMessage() {
     if (aiGenerating) return;
 
     const input = document.getElementById("aiInput");
-    const message = input.value.trim();
-    if (!message) return;
+    let message = input.value.trim();
+
+    if (!message && editingIndex === null) return;
 
 
     if (editingIndex !== null) {
@@ -396,7 +397,8 @@ function sendMessage() {
 
               chatBox.appendChild(msgDiv);
 
-          } else {
+          } 
+          else {
 
               const textDiv = chatBox.lastChild.querySelector(".aiText");
               if(textDiv){
@@ -510,6 +512,7 @@ function regenerateResponse(msgDiv){
 
     });
 
+    document.getElementById("aiInput").value = originalText;
     sendMessage();
 }
 
