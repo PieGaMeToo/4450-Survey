@@ -17,10 +17,11 @@
     <select id="languageSelect">
       <option value="English">English</option>
       <option value="Spanish">Spanish</option>
-      <option value="French">French</option>
-      <option value="German">German</option>
-      <option value="Chinese">Chinese</option>
-      <option value="Japanese">Japanese</option>
+      <option value="Chinese (Simplified)">Chinese (Simplified)</option>
+      <option value="Chinese (Traditional)">Chinese (Traditional)</option>
+      <option value="Korean">Korean</option>
+      <option value="Vietnamese">Vietnamese</option>
+      <option value="Hindi">Hindi</option>
       <option value="Other">Other</option>
     </select>
 
@@ -66,6 +67,8 @@
   <!-- STEP 3 -->
   <div id="page3" class="page" style="display:none;">
 
+    <h3 id="taskDisplay">Current Task:</h3>
+
     <div class="layout">
 
       <!-- CHAT -->
@@ -82,12 +85,26 @@
       <div class="draft-container">
         <p><b>Your Outline / Draft:</b></p>
         <textarea id="draftBox"></textarea>
+        <button id="submitDraftBtn" class="submitBtn">Submit Draft</button>
       </div>
 
     </div>
 
     <button id="backTo2">Back</button>
 
+  </div>
+
+  <!-- STEP 4 -->
+  <div id="page4" class="page" style="display:none;">
+    <h2>Thank You</h2>
+
+    <p>
+    Thank you for taking the survey.
+    </p>
+
+    <p>
+    Please return to the Qualtrics survey to finish the study.
+    </p>
   </div>
 
 </div>
@@ -104,6 +121,7 @@ if (!userId) {
 const page1 = document.getElementById("page1");
 const page2 = document.getElementById("page2");
 const page3 = document.getElementById("page3");
+const page4 = document.getElementById("page4");
 
 document.getElementById("toPage2").onclick = () => {
 
@@ -140,8 +158,23 @@ document.getElementById("toPage3").onclick = () => {
 
     selectedTask = task.value;
 
+    document.getElementById("taskDisplay").textContent =
+        "Current Task: " + task.parentElement.textContent.trim();
+
     page2.style.display = "none";
     page3.style.display = "block";
+};
+
+document.getElementById("submitDraftBtn").onclick = () => {
+
+    const confirmSubmit = confirm(
+        "Are you sure you want to submit? You will not be able to return."
+    );
+
+    if (!confirmSubmit) return;
+
+    page3.style.display = "none";
+    page4.style.display = "block";
 };
 
 document.getElementById("backTo2").onclick = () => {
