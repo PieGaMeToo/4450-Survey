@@ -166,7 +166,7 @@ document.getElementById("toPage3").onclick = () => {
     page3.style.display = "block";
 };
 
-document.getElementById("submitDraftBtn").onclick = () => {
+document.getElementById("submitDraftBtn").onclick = async () => {
 
     const confirmSubmit = confirm(
         "Are you sure you want to submit? You will not be able to return."
@@ -175,6 +175,21 @@ document.getElementById("submitDraftBtn").onclick = () => {
     if (!confirmSubmit) return;
 
     clearInterval(timerInterval);
+
+    const draft = document.getElementById("draftBox").value;
+
+    await fetch("/submit-draft", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            userId: userId,
+            language: selectedLanguage,
+            task: selectedTask,
+            draft: draft
+        })
+    });
 
     page3.style.display = "none";
     page4.style.display = "block";
