@@ -245,3 +245,23 @@ button#sendBtn:active {
 .editBtn:hover {
   opacity: 1;
 }
+
+/* Mobile screen layout */
+@media (max-width: 800px) {
+
+  .layout {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .chat-container {
+    flex: none;
+    height: 50vh;
+  }
+
+  .draft-container {
+    flex: none;
+    height: 50vh;
+  }
+
+}
