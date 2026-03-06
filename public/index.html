@@ -210,6 +210,13 @@ let timerInterval;
 let timeRemaining = 600; // 10 minutes in seconds
 let timerStarted = false;
 
+const aiInput = document.getElementById("aiInput");
+
+aiInput.disabled = true;
+sendBtn.disabled = true;
+sendBtn.style.opacity = "0.5";
+sendBtn.style.cursor = "not-allowed";
+
 const timerDisplay = document.getElementById("timerDisplay");
 const startTimerBtn = document.getElementById("startTimerBtn");
 
@@ -230,6 +237,11 @@ startTimerBtn.onclick = () => {
     startTimerBtn.disabled = true;
     startTimerBtn.style.opacity = "0.5";
     startTimerBtn.style.cursor = "not-allowed";
+
+    aiInput.disabled = false;
+    sendBtn.disabled = false;
+    sendBtn.style.opacity = "1";
+    sendBtn.style.cursor = "pointer";
 
     timerInterval = setInterval(() => {
 
@@ -282,6 +294,11 @@ function addMessage(content, sender, index=null) {
 }
 
 function sendMessage() {
+
+    if (!timerStarted) {
+        alert("Please press Start before chatting with the AI.");
+        return;
+    }
 
     if (aiGenerating) return;
 
