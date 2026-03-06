@@ -332,7 +332,7 @@ function sendMessage() {
     let lang = selectedLanguage;
 
     const evtSource = new EventSource(
-        `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(fullMessage)}&lang=${encodeURIComponent(lang)}&editIndex=${editingIndex}`
+        `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(fullMessage)}&lang=${encodeURIComponent(lang)}&editIndex=${editingIndex ?? ""}`
     );
 
     evtSource.onmessage = (e) => {
