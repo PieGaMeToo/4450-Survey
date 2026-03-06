@@ -373,12 +373,38 @@ function sendMessage() {
   const data = JSON.parse(e.data);
 
       if (data.partial) {
+
           if (!chatBox.lastChild || !chatBox.lastChild.classList.contains("ai")) {
+
               const messageIndex = chatBox.children.length;
-              addMessage(data.partial, "ai", messageIndex);
+
+              const msgDiv = document.createElement("div");
+              msgDiv.className = "chat-message ai";
+              msgDiv.dataset.index = messageIndex;
+
+              const textDiv = document.createElement("div");
+              textDiv.className = "aiText";
+              textDiv.innerHTML = formatResponse(data.partial);
+
+              const regenBtn = document.createElement("button");
+              regenBtn.textContent = "↻";
+              regenBtn.className = "regenBtn";
+              regenBtn.onclick = () => regenerateResponse(msgDiv);
+
+              msgDiv.appendChild(textDiv);
+              msgDiv.appendChild(regenBtn);
+
+              chatBox.appendChild(msgDiv);
+
           } else {
-              chatBox.lastChild.innerHTML = formatResponse(data.partial);
+
+              const textDiv = chatBox.lastChild.querySelector(".aiText");
+              if(textDiv){
+                  textDiv.innerHTML = formatResponse(data.partial);
+              }
+
           }
+
       }
 
       if (data.done) {
