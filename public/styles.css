@@ -120,3 +120,34 @@ button#sendBtn:active { transform: translateY(1px); }
 .chat-box::-webkit-scrollbar { width: 8px; }
 .chat-box::-webkit-scrollbar-thumb { background-color: rgba(90,103,216,0.5); border-radius: 4px; }
 .chat-box::-webkit-scrollbar-track { background: #f4f6f9; }
+
+
+.page {
+  max-width: 800px;
+  margin: auto;
+  padding: 30px;
+}
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.taskOption {
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.taskOption:hover {
+  background: #f1f5f9;
+}
+
+.navButtons {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
