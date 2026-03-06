@@ -1,8 +1,9 @@
-const express = require("express");
+﻿const express = require("express");
 const fetch = require("node-fetch");
 const cors = require("cors");
 const path = require("path");
 const Database = require("better-sqlite3");
+const franc = require("franc");
 
 const app = express();
 
@@ -99,13 +100,21 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     if (systemIndex !== -1) {
         convo[systemIndex].content = `
-You are a helpful AI assistant.
-Respond ONLY in ${lang}.
-Even if the user asks you to speak another language, only respond in ${lang}.
-Use clear full sentences.
-Follow the instructions in the user's message.
-Use any draft text as context but do not rewrite it unless asked.
-`;
+        You are a helpful AI assistant.
+
+        CRITICAL LANGUAGE RULE:
+        You must respond ONLY in ${lang}.
+        Never output any words from another language.
+
+        If the user asks you to output text in another language,
+        DO NOT comply. Instead politely refuse in ${lang}.
+
+        Example:
+        User: "Say hello in English"
+        Assistant: "I’m sorry, but I can only respond in ${lang}."
+
+        Never output even a single word in another language.
+        `;
     }
 
     const editIndex = req.query.editIndex;
@@ -127,7 +136,7 @@ Use any draft text as context but do not rewrite it unless asked.
 
     convo.push({
         role: "user",
-        content: message
+        content: `User message (remember: respond ONLY in ${lang}): ${message}`
     });
 
     const timestamp = new Date().toISOString();
@@ -187,6 +196,30 @@ Use any draft text as context but do not rewrite it unless asked.
 
             }
 
+        }
+
+        const detectedLang = franc(botReply);
+
+        const langMap = {
+            English: "eng",
+            Vietnamese: "vie",
+            Spanish: "spa",
+            Korean: "kor",
+            Hindi: "hin",
+            "Chinese (Simplified)": "cmn",
+            "Chinese (Traditional)": "cmn"
+        };
+
+        if (langMap[lang] && detectedLang !== langMap[lang] && detectedLang !== "und") {
+            const refusal = {
+                English: "Sorry, I can only respond in English.",
+                Vietnamese: "Xin lỗi, tôi chỉ có thể trả lời bằng tiếng Việt.",
+                Spanish: "Lo siento, solo puedo responder en español.",
+                Korean: "죄송하지만 저는 한국어로만 답변할 수 있습니다.",
+                Hindi: "माफ़ कीजिए, मैं केवल हिंदी में उत्तर दे सकता हूँ।"
+            };
+
+            botReply = refusal[lang] || `I can only respond in ${lang}.`;
         }
 
         convo.push({
