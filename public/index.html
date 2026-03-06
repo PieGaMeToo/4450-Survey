@@ -107,13 +107,13 @@ const page3 = document.getElementById("page3");
 
 document.getElementById("toPage2").onclick = () => {
 
-    let lang = selectedLanguage;
+    let lang = document.getElementById("languageSelect").value;
 
-    if(lang === "Other"){
+    if (lang === "Other") {
         lang = document.getElementById("otherLanguageInput").value.trim();
     }
 
-    if(!lang){
+    if (!lang) {
         alert("Please select a language.");
         return;
     }
@@ -186,10 +186,7 @@ function sendMessage() {
     addMessage(message, "user");
     input.value = "";
 
-    let lang = document.getElementById("languageSelect").value;
-    if (lang === "other") {
-        lang = document.getElementById("otherLanguageInput").value.trim() || "English";
-    }
+    let lang = selectedLanguage;
 
     const evtSource = new EventSource(
         `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(fullMessage)}&lang=${encodeURIComponent(lang)}`
