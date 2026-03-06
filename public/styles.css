@@ -224,21 +224,24 @@ button#sendBtn:active {
 
 .chat-message {
   position: relative;
+  padding-bottom: 18px;
 }
 
 .editBtn {
-  display: none;
   position: absolute;
-  bottom: -18px;
-  right: 5px;
+  bottom: 2px;
+  right: 6px;
   font-size: 11px;
   border: none;
   background: #ddd;
   padding: 2px 6px;
   border-radius: 5px;
   cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
 }
 
-.chat-message.user:hover .editBtn {
-  display: block;
+.chat-message.user:hover .editBtn,
+.editBtn:hover {
+  opacity: 1;
 }

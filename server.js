@@ -107,6 +107,21 @@ Use any draft text as context but do not rewrite it unless asked.
 `;
     }
 
+    const editIndex = req.query.editIndex;
+
+    if (editIndex !== undefined && editIndex !== "") {
+
+        const idx = parseInt(editIndex);
+
+        if (conversations[userId] && conversations[userId].length > idx + 1) {
+
+            conversations[userId] =
+                conversations[userId].slice(0, idx + 1);
+
+        }
+
+    }
+
     convo.push({
         role: "user",
         content: message
