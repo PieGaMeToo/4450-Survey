@@ -114,6 +114,9 @@
 let userId = localStorage.getItem("uid");
 let selectedLanguage = "";
 let selectedTask = "";
+
+let aiGenerating = false;
+const sendBtn = document.getElementById("sendBtn");
 if (!userId) {
     userId = crypto.randomUUID();
     localStorage.setItem("uid", userId);
@@ -220,7 +223,10 @@ startTimerBtn.onclick = () => {
     if (timerStarted) return;
 
     timerStarted = true;
+
     startTimerBtn.disabled = true;
+    startTimerBtn.style.opacity = "0.5";
+    startTimerBtn.style.cursor = "not-allowed";
 
     timerInterval = setInterval(() => {
 
@@ -256,9 +262,15 @@ function addMessage(content, sender) {
 }
 
 function sendMessage() {
+
+    if (aiGenerating) return;
+
     const input = document.getElementById("aiInput");
     const message = input.value.trim();
     if (!message) return;
+
+    aiGenerating = true;
+    sendBtn.disabled = true;
 
     const draftContent = document.getElementById("draftBox").value.trim();
     let fullMessage =
@@ -280,22 +292,34 @@ function sendMessage() {
     );
 
     evtSource.onmessage = (e) => {
-        const data = JSON.parse(e.data);
-        if (data.partial) {
-            if (!chatBox.lastChild || !chatBox.lastChild.classList.contains("ai")) {
-                addMessage(data.partial, "ai");
-            } else {
-                chatBox.lastChild.innerHTML = formatResponse(data.partial);
-            }
+      const data = JSON.parse(e.data);
+      if (data.partial) {
+          if (!chatBox.lastChild || !chatBox.lastChild.classList.contains("ai")) {
+              addMessage(data.partial, "ai");
+          } else {
+              chatBox.lastChild.innerHTML = formatResponse(data.partial);
+          }
+      }
+      if (data.done) {
+
+        if (!chatBox.lastChild.classList.contains("ai")) {
+            addMessage(data.reply, "ai");
         }
-        if (data.done) {
-            if (!chatBox.lastChild.classList.contains("ai")) addMessage(data.reply, "ai");
-            evtSource.close();
-        }
-        if (data.error) {
-            addMessage("[Error]", "ai");
-            evtSource.close();
-        }
+
+        aiGenerating = false;
+        sendBtn.disabled = false;
+
+        evtSource.close();
+      }
+      if (data.error) {
+
+        addMessage("[Error]", "ai");
+
+        aiGenerating = false;
+        sendBtn.disabled = false;
+
+        evtSource.close();
+      }
     };
 
     evtSource.onerror = (err) => {
