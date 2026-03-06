@@ -115,6 +115,9 @@ let userId = localStorage.getItem("uid");
 let selectedLanguage = "";
 let selectedTask = "";
 
+let editingIndex = null;
+let originalText = "";
+
 let aiGenerating = false;
 const sendBtn = document.getElementById("sendBtn");
 if (!userId) {
@@ -253,10 +256,27 @@ function formatResponse(text) {
 }
 
 const chatBox = document.getElementById("chatBox");
-function addMessage(content, sender) {
+function addMessage(content, sender, index=null) {
+
     const msgDiv = document.createElement("div");
     msgDiv.className = `chat-message ${sender}`;
+
+    if(index !== null){
+        msgDiv.dataset.index = index;
+    }
+
     msgDiv.innerHTML = formatResponse(content);
+
+    if(sender === "user"){
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Edit";
+        editBtn.className = "editBtn";
+
+        editBtn.onclick = () => startEditing(msgDiv);
+
+        msgDiv.appendChild(editBtn);
+    }
+
     chatBox.appendChild(msgDiv);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
@@ -269,6 +289,19 @@ function sendMessage() {
     const message = input.value.trim();
     if (!message) return;
 
+
+    if(editingIndex !== null){
+
+      const messages = Array.from(chatBox.children);
+
+      messages.forEach(msg=>{
+          const idx = parseInt(msg.dataset.index);
+          if(idx > editingIndex){
+              msg.remove();
+          }
+      });
+
+    }
     aiGenerating = true;
     sendBtn.disabled = true;
 
@@ -288,8 +321,23 @@ function sendMessage() {
     let lang = selectedLanguage;
 
     const evtSource = new EventSource(
-        `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(fullMessage)}&lang=${encodeURIComponent(lang)}`
+        `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(fullMessage)}&lang=${encodeURIComponent(lang)}&editIndex=${editingIndex}`
     );
+
+    const editIndex = req.query.editIndex;
+
+    if(editIndex !== undefined && editIndex !== ""){
+
+      const idx = parseInt(editIndex);
+
+      if(conversations[userId] && conversations[userId].length > idx + 1){
+
+          conversations[userId] =
+              conversations[userId].slice(0, idx + 1);
+
+      }
+
+    }
 
     evtSource.onmessage = (e) => {
       const data = JSON.parse(e.data);
@@ -326,6 +374,46 @@ function sendMessage() {
         console.error("SSE error", err);
         evtSource.close();
     };
+
+    editingIndex = null;
+
+    const cancelBtn = document.getElementById("cancelEditBtn");
+    if(cancelBtn) cancelBtn.remove();
+
+    document.getElementById("aiInput").style.background = "white";
+}
+
+function startEditing(msgDiv){
+
+    const index = parseInt(msgDiv.dataset.index);
+
+    editingIndex = index;
+    originalText = msgDiv.innerText.replace("Edit","").trim();
+
+    const input = document.getElementById("aiInput");
+
+    input.value = originalText;
+    input.style.background = "#f0f0f0";
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.id = "cancelEditBtn";
+    cancelBtn.textContent = "Cancel";
+
+    cancelBtn.onclick = cancelEdit;
+
+    document.querySelector(".input-panel").appendChild(cancelBtn);
+}
+
+function cancelEdit(){
+
+    editingIndex = null;
+
+    const input = document.getElementById("aiInput");
+    input.value = "";
+    input.style.background = "white";
+
+    const cancelBtn = document.getElementById("cancelEditBtn");
+    if(cancelBtn) cancelBtn.remove();
 }
 
 document.getElementById("sendBtn").onclick = sendMessage;
