@@ -136,7 +136,7 @@ document.getElementById("toPage2").onclick = () => {
 
     let lang = document.getElementById("languageSelect").value;
 
-    if (lang === "Other") {
+    if (lang === "Other")
         lang = document.getElementById("otherLanguageInput").value.trim();
     }
 
@@ -357,6 +357,8 @@ function sendMessage() {
 
     let lang = selectedLanguage;
 
+    streamFinished = false;
+
     const evtSource = new EventSource(
         `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(fullMessage)}&lang=${encodeURIComponent(lang)}&editIndex=${editingIndex ?? ""}`
     );
@@ -400,13 +402,13 @@ function sendMessage() {
       }
     };
 
-    evtSource.onerror = (err) => {
+    evtSource.onerror = () => {
 
-        if (!streamFinished) {
-            addMessage("[Error]", "ai");
-        }
+      if (!streamFinished) {
+          console.error("Unexpected SSE disconnect");
+          addMessage("[Error]", "ai");
+      }
 
-        evtSource.close();
     };
 
     editingIndex = null;
@@ -462,7 +464,7 @@ document.getElementById("aiInput").addEventListener("keydown", (e) => {
 
 document.getElementById("languageSelect").addEventListener("change", (e) => {
     const otherInput = document.getElementById("otherLanguageInput");
-    if (e.target.value === "other") {
+    if (e.target.value === "Other") {
         otherInput.style.display = "block";
         otherInput.focus();
     } else {
