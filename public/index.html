@@ -121,6 +121,8 @@ let originalText = "";
 
 let aiGenerating = false;
 let streamFinished = false;
+
+let isRegenerating = false;
 const sendBtn = document.getElementById("sendBtn");
 if (!userId) {
     userId = crypto.randomUUID();
@@ -359,7 +361,7 @@ function sendMessage() {
         messageIndex = chatBox.children.length;
     }
 
-    addMessage(message, "user", messageIndex ?? chatBox.children.length);
+    if (!isRegenerating) { addMessage(message, "user", messageIndex ?? chatBox.children.length); }
     input.value = "";
 
     let lang = selectedLanguage;
@@ -451,6 +453,7 @@ function sendMessage() {
 
     document.getElementById("aiInput").style.background = "white";
 
+    isRegenerating = false;
 }
 
 function startEditing(msgDiv){
@@ -512,6 +515,7 @@ function regenerateResponse(msgDiv){
 
     });
 
+    isRegenerating = true;
     document.getElementById("aiInput").value = originalText;
     sendMessage();
 }
