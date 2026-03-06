@@ -109,16 +109,19 @@ Use any draft text as context but do not rewrite it unless asked.
 
     const editIndex = req.query.editIndex;
 
-    if (editIndex !== undefined && editIndex !== "") {
+    if (editingIndex !== null) {
 
-        const idx = parseInt(editIndex);
+        const messages = Array.from(chatBox.children);
 
-        if (conversations[userId] && conversations[userId].length > idx + 1) {
+        messages.forEach(msg => {
 
-            conversations[userId] =
-                conversations[userId].slice(0, idx + 1);
+            const idx = parseInt(msg.dataset.index);
 
-        }
+            if (!isNaN(idx) && idx >= editingIndex) {
+                msg.remove();
+            }
+
+        });
 
     }
 

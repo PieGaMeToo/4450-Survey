@@ -262,7 +262,7 @@ function addMessage(content, sender, index=null) {
     msgDiv.className = `chat-message ${sender}`;
 
     if(index !== null){
-        msgDiv.dataset.index = index;
+      msgDiv.dataset.index = index;
     }
 
     msgDiv.innerHTML = formatResponse(content);
@@ -318,7 +318,14 @@ function sendMessage() {
         fullMessage += `\n\nCurrent Draft:\n${draftContent}`;
     }
 
-    const messageIndex = chatBox.children.length;
+    let messageIndex;
+
+    if(editingIndex !== null){
+        messageIndex = editingIndex;
+    }else{
+        messageIndex = chatBox.children.length;
+    }
+
     addMessage(message, "user", messageIndex);
     input.value = "";
 
