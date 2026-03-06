@@ -276,7 +276,7 @@ function addMessage(content, sender, index=null) {
     msgDiv.className = `chat-message ${sender}`;
 
     if(index !== null){
-      msgDiv.dataset.index = index;
+        msgDiv.dataset.index = index;
     }
 
     msgDiv.innerHTML = formatResponse(content);
@@ -285,10 +285,16 @@ function addMessage(content, sender, index=null) {
         const editBtn = document.createElement("button");
         editBtn.textContent = "Edit";
         editBtn.className = "editBtn";
-
         editBtn.onclick = () => startEditing(msgDiv);
-
         msgDiv.appendChild(editBtn);
+    }
+
+    if(sender === "ai"){
+        const regenBtn = document.createElement("button");
+        regenBtn.textContent = "↻";
+        regenBtn.className = "regenBtn";
+        regenBtn.onclick = () => regenerateResponse(msgDiv);
+        msgDiv.appendChild(regenBtn);
     }
 
     chatBox.appendChild(msgDiv);
@@ -368,7 +374,8 @@ function sendMessage() {
 
       if (data.partial) {
           if (!chatBox.lastChild || !chatBox.lastChild.classList.contains("ai")) {
-              addMessage(data.partial, "ai");
+              const messageIndex = chatBox.children.length;
+              addMessage(data.partial, "ai", messageIndex);
           } else {
               chatBox.lastChild.innerHTML = formatResponse(data.partial);
           }
@@ -449,6 +456,35 @@ function cancelEdit(){
 
     const cancelBtn = document.getElementById("cancelEditBtn");
     if(cancelBtn) cancelBtn.remove();
+}
+
+function regenerateResponse(msgDiv){
+
+    if (aiGenerating) return;
+
+    const index = parseInt(msgDiv.dataset.index);
+
+    editingIndex = index;
+
+    const messages = Array.from(chatBox.children);
+
+    let deleteMode = false;
+
+    messages.forEach(msg => {
+
+        const idx = parseInt(msg.dataset.index);
+
+        if(idx === index){
+            deleteMode = true;
+        }
+
+        if(deleteMode){
+            msg.remove();
+        }
+
+    });
+
+    sendMessage();
 }
 
 document.getElementById("sendBtn").onclick = sendMessage;
