@@ -120,6 +120,7 @@ let editingIndex = null;
 let originalText = "";
 
 let aiGenerating = false;
+let streamFinished = false;
 const sendBtn = document.getElementById("sendBtn");
 if (!userId) {
     userId = crypto.randomUUID();
@@ -361,7 +362,8 @@ function sendMessage() {
     );
 
     evtSource.onmessage = (e) => {
-      const data = JSON.parse(e.data);
+  const data = JSON.parse(e.data);
+
       if (data.partial) {
           if (!chatBox.lastChild || !chatBox.lastChild.classList.contains("ai")) {
               addMessage(data.partial, "ai");
@@ -369,7 +371,10 @@ function sendMessage() {
               chatBox.lastChild.innerHTML = formatResponse(data.partial);
           }
       }
+
       if (data.done) {
+
+        streamFinished = true;
 
         if (!chatBox.lastChild.classList.contains("ai")) {
             const messageIndex = chatBox.children.length;
@@ -381,7 +386,10 @@ function sendMessage() {
 
         evtSource.close();
       }
+
       if (data.error) {
+
+        streamFinished = true;
 
         addMessage("[Error]", "ai");
 
@@ -393,7 +401,11 @@ function sendMessage() {
     };
 
     evtSource.onerror = (err) => {
-        console.error("SSE error", err);
+
+        if (!streamFinished) {
+            addMessage("[Error]", "ai");
+        }
+
         evtSource.close();
     };
 
