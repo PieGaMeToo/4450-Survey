@@ -10,7 +10,6 @@
 <div class="container">
   <div class="mainHeader">AI Chat Study</div>
 
-  <!-- STEP 1 -->
   <div id="page1" class="page">
     <h2>Select Your Language</h2>
 
@@ -30,30 +29,28 @@
     <button id="toPage2">Continue</button>
   </div>
 
-
-  <!-- STEP 2 -->
   <div id="page2" class="page" style="display:none;">
     <h2>Select a Task</h2>
 
     <div class="task-list">
       <label class="taskOption">
         <input type="radio" name="task" value="essay">
-        Essay Writing
+        Task One
       </label>
 
       <label class="taskOption">
         <input type="radio" name="task" value="brainstorm">
-        Brainstorm Ideas
+        Task Two
       </label>
 
       <label class="taskOption">
         <input type="radio" name="task" value="outline">
-        Create an Outline
+        Task Three
       </label>
 
       <label class="taskOption">
         <input type="radio" name="task" value="editing">
-        Editing / Revision
+        Task Four
       </label>
     </div>
 
@@ -63,15 +60,12 @@
     </div>
   </div>
 
-
-  <!-- STEP 3 -->
   <div id="page3" class="page" style="display:none;">
 
     <h3 id="taskDisplay">Current Task:</h3>
 
     <div class="layout">
 
-      <!-- CHAT -->
       <div class="chat-container">
         <div class="chat-box" id="chatBox"></div>
 
@@ -81,11 +75,19 @@
         </div>
       </div>
 
-      <!-- DRAFT -->
       <div class="draft-container">
+
+        <div class="timerBox">
+          <div id="timerDisplay">10:00</div>
+          <button id="startTimerBtn">Start</button>
+        </div>
+
         <p><b>Your Outline / Draft:</b></p>
+
         <textarea id="draftBox"></textarea>
+
         <button id="submitDraftBtn" class="submitBtn">Submit Draft</button>
+
       </div>
 
     </div>
@@ -94,7 +96,6 @@
 
   </div>
 
-  <!-- STEP 4 -->
   <div id="page4" class="page" style="display:none;">
     <h2>Thank You</h2>
 
@@ -173,6 +174,8 @@ document.getElementById("submitDraftBtn").onclick = () => {
 
     if (!confirmSubmit) return;
 
+    clearInterval(timerInterval);
+
     page3.style.display = "none";
     page4.style.display = "block";
 };
@@ -182,14 +185,52 @@ document.getElementById("backTo2").onclick = () => {
     page2.style.display = "block";
 };
 
-// Format AI responses
+let timerInterval;
+let timeRemaining = 600; // 10 minutes in seconds
+let timerStarted = false;
+
+const timerDisplay = document.getElementById("timerDisplay");
+const startTimerBtn = document.getElementById("startTimerBtn");
+
+function updateTimerDisplay() {
+    const minutes = Math.floor(timeRemaining / 60);
+    const seconds = timeRemaining % 60;
+
+    timerDisplay.textContent =
+        `${minutes}:${seconds.toString().padStart(2,'0')}`;
+}
+
+startTimerBtn.onclick = () => {
+
+    if (timerStarted) return;
+
+    timerStarted = true;
+    startTimerBtn.disabled = true;
+
+    timerInterval = setInterval(() => {
+
+        timeRemaining--;
+        updateTimerDisplay();
+
+        if (timeRemaining <= 0) {
+
+            clearInterval(timerInterval);
+
+            alert("Time is up! Your draft will now be submitted.");
+
+            page3.style.display = "none";
+            page4.style.display = "block";
+        }
+
+    }, 1000);
+};
+
 function formatResponse(text) {
     let html = text.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
     let lines = html.split(/\n|\*/).filter(l => l.trim() !== "");
     return lines.map(l => `<p>${l.trim()}</p>`).join("");
 }
 
-// Add message to chat box
 const chatBox = document.getElementById("chatBox");
 function addMessage(content, sender) {
     const msgDiv = document.createElement("div");
@@ -199,13 +240,11 @@ function addMessage(content, sender) {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// Send message function
 function sendMessage() {
     const input = document.getElementById("aiInput");
     const message = input.value.trim();
     if (!message) return;
 
-    // Include current draft as context
     const draftContent = document.getElementById("draftBox").value.trim();
     let fullMessage =
     `Task: ${selectedTask}
@@ -250,10 +289,8 @@ function sendMessage() {
     };
 }
 
-// Send button click
 document.getElementById("sendBtn").onclick = sendMessage;
 
-// Enter / Shift+Enter behavior
 document.getElementById("aiInput").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
@@ -261,7 +298,6 @@ document.getElementById("aiInput").addEventListener("keydown", (e) => {
     }
 });
 
-// Handle "Other" language input
 document.getElementById("languageSelect").addEventListener("change", (e) => {
     const otherInput = document.getElementById("otherLanguageInput");
     if (e.target.value === "other") {

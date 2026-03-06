@@ -9,12 +9,11 @@ body {
   line-height: 1.6;
 }
 
-/* Layout */
 .layout {
   display: flex;
   gap: 20px;
   padding: 20px;
-  height: 90vh; /* full viewport height */
+  height: 90vh;
 }
 
 .chat-container {
@@ -31,8 +30,8 @@ body {
 }
 
 .draft-container textarea#draftBox {
-  flex: 1;            /* fills vertical space */
-  height: 100%;       /* ensures full container height */
+  flex: 1; 
+  height: 100%; 
   resize: vertical;
   padding: 12px;
   font-size: 14px;
@@ -63,8 +62,24 @@ body {
   word-wrap: break-word;
 }
 
-.chat-message.user { align-self: flex-end; background: #5a67d8; color: white; border-bottom-right-radius:0; }
-.chat-message.ai { align-self: flex-start; background: #e5e7eb; color: #1f2937; border-bottom-left-radius:0; }
+.chat-message.user { 
+  align-self: flex-end; 
+  background: #5a67d8; 
+  color: white; 
+  border-bottom-right-radius:0; 
+}
+
+.chat-message.ai {
+  align-self: stretch;
+  max-width: 100%;
+  background: transparent;
+  color: #1f2937;
+  padding: 8px 6px;
+}
+
+.chat-message.ai p {
+  margin: 6px 0;
+}
 
 .input-panel {
   margin-top: 10px;
@@ -99,8 +114,12 @@ button#sendBtn {
   color: white;
 }
 
-button#sendBtn:hover { background-color: #4c51bf; }
-button#sendBtn:active { transform: translateY(1px); }
+button#sendBtn:hover { 
+  background-color: #4c51bf; 
+}
+button#sendBtn:active { 
+  transform: translateY(1px); 
+}
 
 #languageSelect, #otherLanguageInput {
   padding: 10px 12px;
@@ -117,9 +136,16 @@ button#sendBtn:active { transform: translateY(1px); }
   box-shadow: 0 0 0 3px rgba(90,103,216,0.2);
 }
 
-.chat-box::-webkit-scrollbar { width: 8px; }
-.chat-box::-webkit-scrollbar-thumb { background-color: rgba(90,103,216,0.5); border-radius: 4px; }
-.chat-box::-webkit-scrollbar-track { background: #f4f6f9; }
+.chat-box::-webkit-scrollbar { 
+  width: 8px; 
+}
+.chat-box::-webkit-scrollbar-thumb { 
+  background-color: rgba(90,103,216,0.5); 
+  border-radius: 4px; 
+}
+.chat-box::-webkit-scrollbar-track { 
+  background: #f4f6f9; 
+}
 
 
 .page {
@@ -167,4 +193,31 @@ button#sendBtn:active { transform: translateY(1px); }
 
 .submitBtn:hover {
   background-color: #15803d;
+}
+
+.timerBox {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+#timerDisplay {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+#startTimerBtn {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 8px;
+  border: none;
+  background-color: #5a67d8;
+  color: white;
+  cursor: pointer;
+}
+
+#startTimerBtn:hover {
+  background-color: #4c51bf;
 }
