@@ -326,7 +326,7 @@ function sendMessage() {
         messageIndex = chatBox.children.length;
     }
 
-    addMessage(message, "user", messageIndex);
+    addMessage(message, "user", messageIndex ?? chatBox.children.length);
     input.value = "";
 
     let lang = selectedLanguage;
