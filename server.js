@@ -210,16 +210,12 @@ app.get("/chat-stream-sse", async (req, res) => {
             "Chinese (Traditional)": "cmn"
         };
 
-        if (langMap[lang] && detectedLang !== langMap[lang] && detectedLang !== "und") {
-            const refusal = {
-                English: "Sorry, I can only respond in English.",
-                Vietnamese: "Xin lỗi, tôi chỉ có thể trả lời bằng tiếng Việt.",
-                Spanish: "Lo siento, solo puedo responder en español.",
-                Korean: "죄송하지만 저는 한국어로만 답변할 수 있습니다.",
-                Hindi: "माफ़ कीजिए, मैं केवल हिंदी में उत्तर दे सकता हूँ।"
-            };
+        if (langMap[lang]) {
+            const detectedLang = franc(botReply);
 
-            botReply = refusal[lang] || `I can only respond in ${lang}.`;
+            if (detectedLang !== langMap[lang] && detectedLang !== "und") {
+                botReply = refusal[lang] || `I can only respond in ${lang}.`;
+            }
         }
 
         convo.push({
