@@ -85,7 +85,6 @@ app.get("/chat-stream-sse", async (req, res) => {
     const userId = req.query.userId;
     const message = req.query.message;
     const lang = req.query.lang || "English";
-    const draft = req.query.draft || "";
 
     if (!userId || !message) {
         return res.status(400).end();
@@ -96,28 +95,6 @@ app.get("/chat-stream-sse", async (req, res) => {
     }
 
     const convo = conversations[userId];
-
-    const draftIndex = convo.findIndex(m => m.role === "system" && m.draft);
-
-    const draftPrompt = `
-    The user is writing a document.
-
-    CURRENT USER DRAFT:
-    ${draft}
-
-    When answering questions, you MUST use and reference this draft.
-    If the user asks to expand, revise, or improve the draft, modify the text above.
-    `;
-
-    if (draftIndex !== -1) {
-        convo[draftIndex].content = draftPrompt;
-    } else {
-        convo.push({
-            role: "system",
-            content: draftPrompt,
-            draft: true
-        });
-    }
 
     const systemIndex = convo.findIndex(m => m.role === "system");
 
@@ -170,10 +147,8 @@ app.get("/chat-stream-sse", async (req, res) => {
     `).run(userId, "user", message, timestamp);
 
     res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
-    res.setHeader("X-Accel-Buffering", "no");
-    res.setHeader("Access-Control-Allow-Origin", "*");
 
     res.flushHeaders();
     res.write(":\n\n");
@@ -236,8 +211,10 @@ app.get("/chat-stream-sse", async (req, res) => {
         };
 
         if (langMap[lang]) {
+            const detectedLang = franc(botReply);
+
             if (detectedLang !== langMap[lang] && detectedLang !== "und") {
-                botReply = `I can only respond in ${lang}.`;
+                botReply = refusal[lang] || `I can only respond in ${lang}.`;
             }
         }
 
