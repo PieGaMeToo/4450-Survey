@@ -35,7 +35,7 @@ body {
   flex: 2;
   display: flex;
   flex-direction: column;
-  height: 40vh; /* explicit height */
+  height: 60vh; /* explicit height */
   min-height: 0; /* important for scrollable inner flex items */
 }
 
@@ -44,7 +44,7 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 40vh; /* same as chat for visual balance */
+  height: 60vh; /* same as chat for visual balance */
   min-height: 0;
 }
 
