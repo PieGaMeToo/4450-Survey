@@ -267,20 +267,32 @@ function formatResponse(text){
 
 const chatBox=document.getElementById("chatBox");
 
-function addMessage(content,sender,index=null){
+function addMessage(content, sender, index=null){
 
-    const msgDiv=document.createElement("div");
-    msgDiv.className=`chat-message ${sender}`;
+    const msgDiv = document.createElement("div");
+    msgDiv.className = `chat-message ${sender}`;
 
-    if(index!==null){
-        msgDiv.dataset.index=index;
+    msgDiv.innerHTML = formatResponse(content);
+
+    if(sender === "ai"){
+
+        const btnContainer = document.createElement("div");
+        btnContainer.className = "aiButtons";
+
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Edit";
+
+        const regenBtn = document.createElement("button");
+        regenBtn.textContent = "Regenerate";
+
+        btnContainer.appendChild(editBtn);
+        btnContainer.appendChild(regenBtn);
+
+        msgDiv.appendChild(btnContainer);
     }
 
-    msgDiv.innerHTML=formatResponse(content);
-
     chatBox.appendChild(msgDiv);
-    chatBox.scrollTop=chatBox.scrollHeight;
-
+    chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 function sendMessage(){
@@ -301,7 +313,14 @@ function sendMessage(){
 
     const draftContent=document.getElementById("draftBox").value.trim();
 
-    let fullMessage=`Task: ${selectedTask}\n\n${message}`;
+    let fullMessage = `
+    Task: ${selectedTask}
+
+    User request:
+    ${message}
+
+    Use the user's current draft if relevant.
+    `;
 
     addMessage(message,"user");
 
@@ -316,43 +335,41 @@ function sendMessage(){
 
     );
 
-    evtSource.onmessage=(e)=>{
+    evtSource.onmessage = (e) => {
 
-        const data=JSON.parse(e.data);
+        const data = JSON.parse(e.data);
 
-        if(data.partial){
+        if (data.partial) {
 
-            if(!chatBox.lastChild || !chatBox.lastChild.classList.contains("ai")){
+            if (!currentAIMessage) {
 
-                const msgDiv=document.createElement("div");
-                msgDiv.className="chat-message ai";
+                const msgDiv = document.createElement("div");
+                msgDiv.className = "chat-message ai";
 
-                const textDiv=document.createElement("div");
-                textDiv.className="aiText";
-                textDiv.innerHTML=formatResponse(data.partial);
+                const textDiv = document.createElement("div");
+                textDiv.className = "aiText";
 
                 msgDiv.appendChild(textDiv);
 
                 chatBox.appendChild(msgDiv);
 
-            }
-            else{
-
-                const textDiv=chatBox.lastChild.querySelector(".aiText");
-                if(textDiv){
-                    textDiv.innerHTML=formatResponse(data.partial);
-                }
-
+                currentAIMessage = textDiv;
             }
 
+            currentAIMessage.innerHTML = formatResponse(data.partial);
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        if(data.done){
+        if (data.done) {
 
-            aiGenerating=false;
+            aiGenerating = false;
             evtSource.close();
 
+            currentAIMessage = null;
+
         }
+
+    };
 
     };
 
