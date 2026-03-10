@@ -85,6 +85,7 @@ app.get("/chat-stream-sse", async (req, res) => {
     const userId = req.query.userId;
     const message = req.query.message;
     const lang = req.query.lang || "English";
+    const draft = req.query.draft || "";
 
     if (!userId || !message) {
         return res.status(400).end();
