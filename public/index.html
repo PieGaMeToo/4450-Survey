@@ -102,6 +102,7 @@
 </div>
 
 <script>
+
 let userId = localStorage.getItem("uid");
 let selectedLanguage = "";
 let selectedTask = "";
@@ -113,7 +114,7 @@ let aiGenerating = false;
 let streamFinished = false;
 
 let isRegenerating = false;
-const sendBtn = document.getElementById("sendBtn");
+
 if (!userId) {
     userId = crypto.randomUUID();
     localStorage.setItem("uid", userId);
@@ -164,6 +165,18 @@ document.getElementById("toPage3").onclick = () => {
 
     page2.style.display = "none";
     page3.style.display = "block";
+
+    /* Start backend session */
+    fetch("/start-session", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+            userId:userId,
+            language:selectedLanguage,
+            task:selectedTask
+        })
+    });
+
 };
 
 document.getElementById("submitDraftBtn").onclick = async () => {
@@ -180,19 +193,16 @@ document.getElementById("submitDraftBtn").onclick = async () => {
 
     await fetch("/submit-draft", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
+        headers: {"Content-Type":"application/json"},
         body: JSON.stringify({
-            userId: userId,
-            language: selectedLanguage,
-            task: selectedTask,
-            draft: draft
+            userId:userId,
+            draft:draft
         })
     });
 
     page3.style.display = "none";
     page4.style.display = "block";
+
 };
 
 document.getElementById("backTo2").onclick = () => {
@@ -201,333 +211,175 @@ document.getElementById("backTo2").onclick = () => {
 };
 
 let timerInterval;
-let timeRemaining = 600; // 10 minutes in seconds
+let timeRemaining = 600;
 let timerStarted = false;
 
 const aiInput = document.getElementById("aiInput");
+const sendBtn = document.getElementById("sendBtn");
 
 aiInput.disabled = true;
 sendBtn.disabled = true;
-sendBtn.style.opacity = "0.5";
-sendBtn.style.cursor = "not-allowed";
 
 const timerDisplay = document.getElementById("timerDisplay");
 const startTimerBtn = document.getElementById("startTimerBtn");
 
-function updateTimerDisplay() {
-    const minutes = Math.floor(timeRemaining / 60);
-    const seconds = timeRemaining % 60;
-
-    timerDisplay.textContent =
-        `${minutes}:${seconds.toString().padStart(2,'0')}`;
+function updateTimerDisplay(){
+    const minutes = Math.floor(timeRemaining/60);
+    const seconds = timeRemaining%60;
+    timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2,'0')}`;
 }
 
-startTimerBtn.onclick = () => {
+startTimerBtn.onclick = ()=>{
 
-    if (timerStarted) return;
+    if(timerStarted) return;
 
     timerStarted = true;
 
-    startTimerBtn.disabled = true;
-    startTimerBtn.style.opacity = "0.5";
-    startTimerBtn.style.cursor = "not-allowed";
+    aiInput.disabled=false;
+    sendBtn.disabled=false;
 
-    aiInput.disabled = false;
-    sendBtn.disabled = false;
-    sendBtn.style.opacity = "1";
-    sendBtn.style.cursor = "pointer";
-
-    timerInterval = setInterval(() => {
+    timerInterval=setInterval(()=>{
 
         timeRemaining--;
         updateTimerDisplay();
 
-        if (timeRemaining <= 0) {
+        if(timeRemaining<=0){
 
             clearInterval(timerInterval);
 
             alert("Time is up! Your draft will now be submitted.");
 
-            page3.style.display = "none";
-            page4.style.display = "block";
+            page3.style.display="none";
+            page4.style.display="block";
         }
 
-    }, 1000);
+    },1000);
+
 };
 
-function formatResponse(text) {
-    let html = text.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
-    let lines = html.split(/\n|\*/).filter(l => l.trim() !== "");
-    return lines.map(l => `<p>${l.trim()}</p>`).join("");
+function formatResponse(text){
+
+    let html=text.replace(/\*\*(.*?)\*\*/g,"<b>$1</b>");
+    let lines=html.split(/\n|\*/).filter(l=>l.trim()!=="");
+    return lines.map(l=>`<p>${l.trim()}</p>`).join("");
+
 }
 
-const chatBox = document.getElementById("chatBox");
-function addMessage(content, sender, index=null) {
+const chatBox=document.getElementById("chatBox");
 
-    const msgDiv = document.createElement("div");
-    msgDiv.className = `chat-message ${sender}`;
+function addMessage(content,sender,index=null){
 
-    if(index !== null){
-        msgDiv.dataset.index = index;
+    const msgDiv=document.createElement("div");
+    msgDiv.className=`chat-message ${sender}`;
+
+    if(index!==null){
+        msgDiv.dataset.index=index;
     }
 
-    msgDiv.innerHTML = formatResponse(content);
-
-    if(sender === "user"){
-        const editBtn = document.createElement("button");
-        editBtn.textContent = "Edit";
-        editBtn.className = "editBtn";
-        editBtn.onclick = () => startEditing(msgDiv);
-        msgDiv.appendChild(editBtn);
-    }
-
-    if(sender === "ai"){
-        const regenBtn = document.createElement("button");
-        regenBtn.textContent = "↻";
-        regenBtn.className = "regenBtn";
-        regenBtn.onclick = () => regenerateResponse(msgDiv);
-        msgDiv.appendChild(regenBtn);
-    }
+    msgDiv.innerHTML=formatResponse(content);
 
     chatBox.appendChild(msgDiv);
-    chatBox.scrollTop = chatBox.scrollHeight;
+    chatBox.scrollTop=chatBox.scrollHeight;
+
 }
 
-function sendMessage() {
+function sendMessage(){
 
-    if (!timerStarted) {
+    if(!timerStarted){
         alert("Please press Start before chatting with the AI.");
         return;
     }
 
-    if (aiGenerating) return;
+    if(aiGenerating) return;
 
-    const input = document.getElementById("aiInput");
-    let message = input.value.trim();
+    const input=document.getElementById("aiInput");
+    let message=input.value.trim();
 
-    if (!message && editingIndex === null) return;
+    if(!message) return;
 
+    aiGenerating=true;
 
-    if (editingIndex !== null) {
+    const draftContent=document.getElementById("draftBox").value.trim();
 
-      const messages = Array.from(chatBox.children);
+    let fullMessage=`Task: ${selectedTask}\n\n${message}`;
 
-      let deleteMode = false;
+    addMessage(message,"user");
 
-      messages.forEach(msg => {
+    input.value="";
 
-        const idx = parseInt(msg.dataset.index);
+    const evtSource=new EventSource(
 
-        if (idx === editingIndex) {
-            deleteMode = true;
-        }
+        `/chat-stream-sse?userId=${userId}`+
+        `&message=${encodeURIComponent(fullMessage)}`+
+        `&draft=${encodeURIComponent(draftContent)}`+
+        `&lang=${encodeURIComponent(selectedLanguage)}`
 
-        if (deleteMode) {
-            msg.remove();
-        }
-
-      });
-
-    }
-
-    aiGenerating = true;
-    sendBtn.disabled = true;
-
-    const draftContent = document.getElementById("draftBox").value.trim();
-    let fullMessage =
-    `Task: ${selectedTask}
-
-    ${message}`;
-
-    if (draftContent) {
-        fullMessage += `\n\nCurrent Draft:\n${draftContent}`;
-    }
-
-    let messageIndex;
-
-    if(editingIndex !== null){
-        messageIndex = editingIndex;
-    }else{
-        messageIndex = chatBox.children.length;
-    }
-
-    if (!isRegenerating) { addMessage(message, "user", messageIndex ?? chatBox.children.length); }
-    input.value = "";
-
-    let lang = selectedLanguage;
-
-    streamFinished = false;
-
-    const evtSource = new EventSource(
-        `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(fullMessage)}&lang=${encodeURIComponent(lang)}&editIndex=${editingIndex ?? ""}`
     );
 
-    evtSource.onmessage = (e) => {
-  const data = JSON.parse(e.data);
+    evtSource.onmessage=(e)=>{
 
-      if (data.partial) {
+        const data=JSON.parse(e.data);
 
-          if (!chatBox.lastChild || !chatBox.lastChild.classList.contains("ai")) {
+        if(data.partial){
 
-              const messageIndex = chatBox.children.length;
+            if(!chatBox.lastChild || !chatBox.lastChild.classList.contains("ai")){
 
-              const msgDiv = document.createElement("div");
-              msgDiv.className = "chat-message ai";
-              msgDiv.dataset.index = messageIndex;
+                const msgDiv=document.createElement("div");
+                msgDiv.className="chat-message ai";
 
-              const textDiv = document.createElement("div");
-              textDiv.className = "aiText";
-              textDiv.innerHTML = formatResponse(data.partial);
+                const textDiv=document.createElement("div");
+                textDiv.className="aiText";
+                textDiv.innerHTML=formatResponse(data.partial);
 
-              const regenBtn = document.createElement("button");
-              regenBtn.textContent = "↻";
-              regenBtn.className = "regenBtn";
-              regenBtn.onclick = () => regenerateResponse(msgDiv);
+                msgDiv.appendChild(textDiv);
 
-              msgDiv.appendChild(textDiv);
-              msgDiv.appendChild(regenBtn);
+                chatBox.appendChild(msgDiv);
 
-              chatBox.appendChild(msgDiv);
+            }
+            else{
 
-          } 
-          else {
+                const textDiv=chatBox.lastChild.querySelector(".aiText");
+                if(textDiv){
+                    textDiv.innerHTML=formatResponse(data.partial);
+                }
 
-              const textDiv = chatBox.lastChild.querySelector(".aiText");
-              if(textDiv){
-                  textDiv.innerHTML = formatResponse(data.partial);
-              }
+            }
 
-          }
-
-      }
-
-      if (data.done) {
-
-        streamFinished = true;
-
-        if (!chatBox.lastChild.classList.contains("ai")) {
-            const messageIndex = chatBox.children.length;
-            addMessage(data.reply, "ai", messageIndex);
         }
 
-        aiGenerating = false;
-        sendBtn.disabled = false;
+        if(data.done){
 
-        evtSource.close();
-      }
+            aiGenerating=false;
+            evtSource.close();
 
-      if (data.error) {
-
-        streamFinished = true;
-
-        aiGenerating = false;
-        sendBtn.disabled = false;
-
-        evtSource.close();
-      }
-    };
-
-    evtSource.onerror = () => {
-
-      if (!streamFinished) {
-          console.error("Unexpected SSE disconnect");
-          addMessage("[Error]", "ai");
-      }
+        }
 
     };
 
-    editingIndex = null;
-
-    const cancelBtn = document.getElementById("cancelEditBtn");
-    if(cancelBtn) cancelBtn.remove();
-
-    document.getElementById("aiInput").style.background = "white";
-
-    isRegenerating = false;
 }
 
-function startEditing(msgDiv){
+document.getElementById("sendBtn").onclick=sendMessage;
 
-    const index = parseInt(msgDiv.dataset.index);
-
-    editingIndex = index;
-    originalText = msgDiv.innerText.replace("Edit","").trim();
-
-    const input = document.getElementById("aiInput");
-
-    input.value = originalText;
-    input.style.background = "#f0f0f0";
-
-    const cancelBtn = document.createElement("button");
-    cancelBtn.id = "cancelEditBtn";
-    cancelBtn.textContent = "Cancel";
-
-    cancelBtn.onclick = cancelEdit;
-
-    document.querySelector(".input-panel").appendChild(cancelBtn);
-}
-
-function cancelEdit(){
-
-    editingIndex = null;
-
-    const input = document.getElementById("aiInput");
-    input.value = "";
-    input.style.background = "white";
-
-    const cancelBtn = document.getElementById("cancelEditBtn");
-    if(cancelBtn) cancelBtn.remove();
-}
-
-function regenerateResponse(msgDiv){
-
-    if (aiGenerating) return;
-
-    const index = parseInt(msgDiv.dataset.index);
-
-    editingIndex = index;
-
-    const messages = Array.from(chatBox.children);
-
-    let deleteMode = false;
-
-    messages.forEach(msg => {
-
-        const idx = parseInt(msg.dataset.index);
-
-        if(idx === index){
-            deleteMode = true;
-        }
-
-        if(deleteMode){
-            msg.remove();
-        }
-
-    });
-
-    isRegenerating = true;
-    document.getElementById("aiInput").value = originalText;
-    sendMessage();
-}
-
-document.getElementById("sendBtn").onclick = sendMessage;
-
-document.getElementById("aiInput").addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+document.getElementById("aiInput").addEventListener("keydown",(e)=>{
+    if(e.key==="Enter" && !e.shiftKey){
         e.preventDefault();
         sendMessage();
     }
 });
 
-document.getElementById("languageSelect").addEventListener("change", (e) => {
-    const otherInput = document.getElementById("otherLanguageInput");
-    if (e.target.value === "Other") {
-        otherInput.style.display = "block";
+document.getElementById("languageSelect").addEventListener("change",(e)=>{
+
+    const otherInput=document.getElementById("otherLanguageInput");
+
+    if(e.target.value==="Other"){
+        otherInput.style.display="block";
         otherInput.focus();
-    } else {
-        otherInput.style.display = "none";
+    }else{
+        otherInput.style.display="none";
     }
+
 });
+
 </script>
 
 </body>

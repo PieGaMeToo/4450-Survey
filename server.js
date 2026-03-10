@@ -96,6 +96,18 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     const convo = conversations[userId];
 
+    const draftIndex = convo.findIndex(m => m.role === "system" && m.draft);
+
+    if (draftIndex !== -1) {
+        convo[draftIndex].content = `Current draft:\n${draft}`;
+    } else {
+        convo.push({
+            role: "system",
+            content: `Current draft:\n${draft}`,
+            draft: true
+        });
+    }
+
     const systemIndex = convo.findIndex(m => m.role === "system");
 
     if (systemIndex !== -1) {
