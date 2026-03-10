@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS messages (
 `);
 
 let conversations = {};
-
+let turnCounter = {};
 function initializeConversation(userId) {
     conversations[userId] = [
         {
@@ -40,6 +40,8 @@ function initializeConversation(userId) {
             content: "You are a helpful AI assistant."
         }
     ];
+
+    turnCounter[userId] = 0;
 }
 
 app.post("/start-session", (req, res) => {
@@ -134,6 +136,8 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     }
 
+    turnCounter[userId] += 1;
+
     convo.push({
         role: "user",
         content: `User message (remember: respond ONLY in ${lang}): ${message}`
@@ -142,9 +146,16 @@ app.get("/chat-stream-sse", async (req, res) => {
     const timestamp = new Date().toISOString();
 
     db.prepare(`
-        INSERT INTO messages (user_id, role, content, timestamp)
-        VALUES (?, ?, ?, ?)
-    `).run(userId, "user", message, timestamp);
+    INSERT INTO messages (user_id, role, content, timestamp, turn_number, edit_index)
+    VALUES (?, ?, ?, ?, ?, ?)
+    `).run(
+        userId,
+        "user",
+        message,
+        timestamp,
+        turnCounter[userId],
+        editIndex || null
+    );
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
@@ -211,10 +222,10 @@ app.get("/chat-stream-sse", async (req, res) => {
         };
 
         if (langMap[lang]) {
-            const detectedLang = franc(botReply);
+            const detected = franc(botReply);
 
-            if (detectedLang !== langMap[lang] && detectedLang !== "und") {
-                botReply = refusal[lang] || `I can only respond in ${lang}.`;
+            if (detected !== langMap[lang] && detected !== "und") {
+                botReply = `I can only respond in ${lang}.`;
             }
         }
 
@@ -224,9 +235,16 @@ app.get("/chat-stream-sse", async (req, res) => {
         });
 
         db.prepare(`
-            INSERT INTO messages (user_id, role, content, timestamp)
-            VALUES (?, ?, ?, ?)
-        `).run(userId, "assistant", botReply, new Date().toISOString());
+        INSERT INTO messages (user_id, role, content, timestamp, turn_number, edit_index)
+        VALUES (?, ?, ?, ?, ?, ?)
+        `).run(
+            userId,
+            "assistant",
+            botReply,
+            new Date().toISOString(),
+            turnCounter[userId],
+            editIndex || null
+        );
 
         res.write(
             `data: ${JSON.stringify({ done: true, reply: botReply })}\n\n`
