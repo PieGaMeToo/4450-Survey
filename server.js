@@ -99,12 +99,22 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     const draftIndex = convo.findIndex(m => m.role === "system" && m.draft);
 
+    const draftPrompt = `
+    The user is writing a document.
+
+    CURRENT USER DRAFT:
+    ${draft}
+
+    When answering questions, you MUST use and reference this draft.
+    If the user asks to expand, revise, or improve the draft, modify the text above.
+    `;
+
     if (draftIndex !== -1) {
-        convo[draftIndex].content = `Current draft:\n${draft}`;
+        convo[draftIndex].content = draftPrompt;
     } else {
         convo.push({
             role: "system",
-            content: `Current draft:\n${draft}`,
+            content: draftPrompt,
             draft: true
         });
     }
@@ -224,10 +234,8 @@ app.get("/chat-stream-sse", async (req, res) => {
         };
 
         if (langMap[lang]) {
-            const detectedLang = franc(botReply);
-
             if (detectedLang !== langMap[lang] && detectedLang !== "und") {
-                botReply = refusal[lang] || `I can only respond in ${lang}.`;
+                botReply = `I can only respond in ${lang}.`;
             }
         }
 
