@@ -139,11 +139,6 @@ document.getElementById("toPage2").onclick = () => {
     page2.style.display = "block";
 };
 
-document.getElementById("backTo1").onclick = () => {
-    page2.style.display = "none";
-    page1.style.display = "block";
-};
-
 document.getElementById("toPage3").onclick = async () => {
     const task = document.querySelector('input[name="task"]:checked');
 
@@ -201,10 +196,6 @@ document.getElementById("submitDraftBtn").onclick = async () => {
     page4.style.display = "block";
 };
 
-document.getElementById("backTo2").onclick = () => {
-    page3.style.display = "none";
-    page2.style.display = "block";
-};
 
 let timerInterval;
 let timeRemaining = 600; // 10 minutes in seconds
