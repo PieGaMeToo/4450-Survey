@@ -21,10 +21,7 @@
       <option value="Korean">Korean</option>
       <option value="Vietnamese">Vietnamese</option>
       <option value="Hindi">Hindi</option>
-      <option value="Other">Other</option>
     </select>
-
-    <input type="text" id="otherLanguageInput" placeholder="Enter language..." style="display:none;">
 
     <button id="toPage2">Continue</button>
 
@@ -127,10 +124,6 @@ const page4 = document.getElementById("page4");
 document.getElementById("toPage2").onclick = () => {
 
     let lang = document.getElementById("languageSelect").value;
-
-    if (lang === "Other") {
-        lang = document.getElementById("otherLanguageInput").value.trim();
-    }
 
     if (!lang) {
         alert("Please select a language.");
@@ -537,15 +530,6 @@ document.getElementById("aiInput").addEventListener("keydown", (e) => {
     }
 });
 
-document.getElementById("languageSelect").addEventListener("change", (e) => {
-    const otherInput = document.getElementById("otherLanguageInput");
-    if (e.target.value === "Other") {
-        otherInput.style.display = "block";
-        otherInput.focus();
-    } else {
-        otherInput.style.display = "none";
-    }
-});
 </script>
 
 </body>
