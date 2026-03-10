@@ -3,7 +3,7 @@ const fetch = require("node-fetch");
 const cors = require("cors");
 const path = require("path");
 const Database = require("better-sqlite3");
-const franc = require("franc");
+const { franc } = require("franc");
 
 const app = express();
 
