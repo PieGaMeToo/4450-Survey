@@ -172,13 +172,6 @@ button#sendBtn:active {
   background: #f4f6f9; 
 }
 
-
-.page {
-  max-width: 800px;
-  margin: auto;
-  padding: 30px;
-}
-
 .task-list {
   display: flex;
   flex-direction: column;
