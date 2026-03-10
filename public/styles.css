@@ -22,35 +22,35 @@ body {
   overflow: hidden;
 }
 
-/* Main layout containing chat + draft boxes */
 .layout {
   display: flex;
   gap: 20px;
-  flex: 1 1 auto; /* take remaining vertical space */
-  min-height: 0; /* required for inner scrolling */
   width: 100%;
+  height: calc(100vh - 60px); /* full viewport minus padding/header */
   box-sizing: border-box;
 }
 
 /* Chat container: 2/3 of layout */
 .chat-container {
-  flex: 2 1 0%;
+  flex: 2;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  height: 40vh; /* explicit height */
+  min-height: 0; /* important for scrollable inner flex items */
 }
 
 /* Draft container: 1/3 of layout */
 .draft-container {
-  flex: 1 1 0%;
+  flex: 1;
   display: flex;
   flex-direction: column;
+  height: 40vh; /* same as chat for visual balance */
   min-height: 0;
 }
 
 /* Chat box: scrollable */
 .chat-box {
-  flex: 1 1 0%;
+  flex: 1;
   padding: 10px;
   border-radius: 12px;
   background: #fefefe;
@@ -61,6 +61,7 @@ body {
   gap: 10px;
   width: 100%;
 }
+
 
 .chat-message {
   max-width: 80%;
@@ -131,7 +132,7 @@ body {
 
 /* Draft box textarea */
 .draft-container textarea#draftBox {
-  flex: 1 1 0%;
+  flex: 1;
   padding: 10px;
   font-size: 14px;
   border-radius: 10px;
