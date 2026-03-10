@@ -9,7 +9,6 @@
 <body>
 
 <div class="container">
-  <div class="mainHeader">AI Chat Study</div>
 
   <div id="page1" class="page">
     <h2>Select Your Language</h2>
@@ -35,18 +34,17 @@
 
     <div class="task-list">
       <label class="taskOption">
-        <input type="radio" name="task" value="essay">
-        Task One
+        <input type="radio" name="task" value="Some people think that the government should decide which subjects students should study at the university, while others think that students should be allowed to apply for the subjects they prefer. Discuss both views and give your opinion.">
+        Task A
       </label>
 
       <label class="taskOption">
-        <input type="radio" name="task" value="brainstorm">
-        Task Two
+        <input type="radio" name="task" value="Some people believe that distance-learning programmes cannot bring the same benefits as attending college or university in person, while others believe that distance education is equally effective. Discuss both views and give your opinion.">
+        Task B
       </label>
     </div>
 
     <div class="navButtons">
-      <button id="backTo1">Back</button>
       <button id="toPage3">Continue</button>
     </div>
   </div>
@@ -82,8 +80,6 @@
       </div>
 
     </div>
-
-    <button id="backTo2">Back</button>
 
   </div>
 
@@ -170,7 +166,7 @@ document.getElementById("toPage3").onclick = async () => {
     });
 
     document.getElementById("taskDisplay").textContent =
-        "Current Task: " + task.parentElement.textContent.trim();
+        "Current Task: " + task.value;
 
     page2.style.display = "none";
     page3.style.display = "block";
