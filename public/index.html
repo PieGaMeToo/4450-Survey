@@ -142,6 +142,7 @@ document.getElementById("toPage2").onclick = () => {
 document.getElementById("toPage3").onclick = async () => {
     const task = document.querySelector('input[name="task"]:checked');
     const outlineInstructions = `
+    <div style="font-size: 13px; margin-top: 4px;">
     <ul>
     <li>Requirements:</li>
     <li>Use only this language when prompting the AI and building your outline.</li>
@@ -153,6 +154,7 @@ document.getElementById("toPage3").onclick = async () => {
     <li>Supporting reasoning or examples for each solution</li>
     <li>Potential limitations or trade-offs of the solutions</li>
     </ul>
+    </div>
     `;
 
     if (!task) {
