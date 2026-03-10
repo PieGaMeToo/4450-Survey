@@ -200,6 +200,7 @@ button#sendBtn:active {
   font-size: 14px;
   width: 100%;
   max-width: 250px;
+  margin-bottom: 10px;
 }
 #languageSelect:focus,
 #otherLanguageInput:focus {
