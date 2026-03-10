@@ -148,16 +148,26 @@ document.getElementById("backTo1").onclick = () => {
     page1.style.display = "block";
 };
 
-document.getElementById("toPage3").onclick = () => {
-
+document.getElementById("toPage3").onclick = async () => {
     const task = document.querySelector('input[name="task"]:checked');
 
-    if(!task){
+    if (!task) {
         alert("Please select a task.");
         return;
     }
 
     selectedTask = task.value;
+
+    // Start the session
+    await fetch("/start-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            userId: userId,
+            language: selectedLanguage,
+            task: selectedTask
+        })
+    });
 
     document.getElementById("taskDisplay").textContent =
         "Current Task: " + task.parentElement.textContent.trim();
