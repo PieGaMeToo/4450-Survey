@@ -200,7 +200,7 @@ button#sendBtn:active {
 .sendBtn{
   position:absolute;
   right:22px;
-  bottom:10px;
+  bottom:15px;
 
   width:38px;
   height:38px;
