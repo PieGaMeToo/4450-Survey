@@ -63,7 +63,7 @@
             <div class="input-wrapper">
                 <textarea id="aiInput" placeholder="Type your message to AI..."></textarea>
                 <button id="sendBtn" class="sendBtn">
-                    <svg width="18" height="18" viewBox="0 0 24 24">
+                    <svg id="sendIcon" width="18" height="18" viewBox="0 0 24 24">
                         <path fill="white" d="M12 5l7 7h-4v7h-6v-7H5z"/>
                     </svg>
                 </button>
@@ -116,6 +116,13 @@ let aiGenerating = false;
 let streamFinished = false;
 
 let isRegenerating = false;
+
+const sendIcon = document.getElementById("sendIcon");
+
+const arrowPath = "M12 5l7 7h-4v7h-6v-7H5z";
+const stopPath = "M8 8h8v8H8z";
+let currentEventSource = null;
+
 const sendBtn = document.getElementById("sendBtn");
 if (!userId) {
     userId = crypto.randomUUID();
@@ -348,7 +355,9 @@ function sendMessage() {
     }
 
     aiGenerating = true;
-    sendBtn.disabled = true;
+
+    sendIcon.querySelector("path").setAttribute("d", stopPath);
+    sendBtn.disabled = false;
 
     const draftContent = document.getElementById("draftBox").value.trim();
     let fullMessage =
@@ -375,9 +384,10 @@ function sendMessage() {
 
     streamFinished = false;
 
-    const evtSource = new EventSource(
+    currentEventSource = new EventSource(
         `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(fullMessage)}&lang=${encodeURIComponent(lang)}&editIndex=${editingIndex ?? ""}`
     );
+    const evtSource = currentEventSource;
 
     evtSource.onmessage = (e) => {
   const data = JSON.parse(e.data);
@@ -428,7 +438,11 @@ function sendMessage() {
         }
 
         aiGenerating = false;
+
+        sendIcon.querySelector("path").setAttribute("d", arrowPath);
         sendBtn.disabled = false;
+
+        currentEventSource = null;
 
         evtSource.close();
       }
@@ -438,7 +452,11 @@ function sendMessage() {
         streamFinished = true;
 
         aiGenerating = false;
+
+        sendIcon.querySelector("path").setAttribute("d", arrowPath);
         sendBtn.disabled = false;
+
+        currentEventSource = null;
 
         evtSource.close();
       }
@@ -527,7 +545,24 @@ function regenerateResponse(msgDiv){
     sendMessage();
 }
 
-document.getElementById("sendBtn").onclick = sendMessage;
+document.getElementById("sendBtn").onclick = () => {
+
+    if (aiGenerating && currentEventSource) {
+
+        currentEventSource.close();
+        currentEventSource = null;
+
+        aiGenerating = false;
+
+        sendIcon.querySelector("path").setAttribute("d", arrowPath);
+
+        sendBtn.disabled = false;
+
+        return;
+    }
+
+    sendMessage();
+};
 
 document.getElementById("aiInput").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
