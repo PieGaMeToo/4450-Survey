@@ -317,6 +317,25 @@ function addMessage(content, sender, index=null) {
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+function showLoadingBubble(){
+
+    const messageIndex = chatBox.children.length;
+
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "chat-message ai aiLoading";
+    msgDiv.dataset.index = messageIndex;
+
+    const spinner = document.createElement("div");
+    spinner.className = "loadingSpinner";
+
+    msgDiv.appendChild(spinner);
+
+    chatBox.appendChild(msgDiv);
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+}
+
 function sendMessage() {
 
     if (!timerStarted) {
@@ -359,6 +378,8 @@ function sendMessage() {
     sendIcon.querySelector("path").setAttribute("d", stopPath);
     sendBtn.disabled = false;
 
+    showLoadingBubble();
+
     const draftContent = document.getElementById("draftBox").value.trim();
     let fullMessage =
     `Task: ${selectedTask}
@@ -393,38 +414,41 @@ function sendMessage() {
   const data = JSON.parse(e.data);
 
       if (data.partial) {
+        if (chatBox.lastChild && chatBox.lastChild.classList.contains("aiLoading")) {
+            chatBox.lastChild.remove();
+        }
 
-          if (!chatBox.lastChild || !chatBox.lastChild.classList.contains("ai")) {
+        if (!chatBox.lastChild || !chatBox.lastChild.classList.contains("ai")) {
 
-              const messageIndex = chatBox.children.length;
+            const messageIndex = chatBox.children.length;
 
-              const msgDiv = document.createElement("div");
-              msgDiv.className = "chat-message ai";
-              msgDiv.dataset.index = messageIndex;
+            const msgDiv = document.createElement("div");
+            msgDiv.className = "chat-message ai";
+            msgDiv.dataset.index = messageIndex;
 
-              const textDiv = document.createElement("div");
-              textDiv.className = "aiText";
-              textDiv.innerHTML = formatResponse(data.partial);
+            const textDiv = document.createElement("div");
+            textDiv.className = "aiText";
+            textDiv.innerHTML = formatResponse(data.partial);
 
-              const regenBtn = document.createElement("button");
-              regenBtn.textContent = "↻";
-              regenBtn.className = "regenBtn";
-              regenBtn.onclick = () => regenerateResponse(msgDiv);
+            const regenBtn = document.createElement("button");
+            regenBtn.textContent = "↻";
+            regenBtn.className = "regenBtn";
+            regenBtn.onclick = () => regenerateResponse(msgDiv);
 
-              msgDiv.appendChild(textDiv);
-              msgDiv.appendChild(regenBtn);
+            msgDiv.appendChild(textDiv);
+            msgDiv.appendChild(regenBtn);
 
-              chatBox.appendChild(msgDiv);
+            chatBox.appendChild(msgDiv);
 
-          } 
-          else {
+        } 
+        else {
 
-              const textDiv = chatBox.lastChild.querySelector(".aiText");
-              if(textDiv){
-                  textDiv.innerHTML = formatResponse(data.partial);
-              }
+            const textDiv = chatBox.lastChild.querySelector(".aiText");
+            if(textDiv){
+                textDiv.innerHTML = formatResponse(data.partial);
+            }
 
-          }
+        }
 
       }
 
@@ -448,6 +472,9 @@ function sendMessage() {
       }
 
       if (data.error) {
+        if (chatBox.lastChild && chatBox.lastChild.classList.contains("aiLoading")) {
+            chatBox.lastChild.remove();
+        }
 
         streamFinished = true;
 
