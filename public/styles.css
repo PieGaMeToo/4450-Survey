@@ -318,6 +318,8 @@ button#sendBtn:active {
   align-items:center;
   gap:8px;
   padding:8px 12px;
+  opacity:0.8;
+  transition: opacity 0.2s ease;
 }
 
 .loadingSpinner {
