@@ -41,6 +41,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  height: clamp(300px, 60vh, 700px);
 }
 
 .draft-container {
@@ -48,6 +49,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  height: clamp(300px, 60vh, 700px);
 }
 
 .chat-box,
