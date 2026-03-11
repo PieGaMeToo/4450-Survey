@@ -341,14 +341,31 @@ button#sendBtn:active {
 
 /* Mobile layout */
 @media (max-width: 800px) {
-  .layout {
+
+  body{
+    overflow-y:auto;
+  }
+
+  .page{
+    height:auto;
+    min-height:100svh;
+    overflow:visible;
+  }
+
+  .layout{
     flex-direction: column;
-    height: 100vh;
+    height:auto;
   }
 
   .chat-container,
-  .draft-container {
-    flex: none;
-    height: 50%;
+  .draft-container{
+    flex:none;
+    height:auto;
+    min-height:300px;
   }
+
+  .chat-box{
+    max-height:50vh;
+  }
+
 }
