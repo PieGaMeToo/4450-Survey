@@ -241,7 +241,20 @@ document.getElementById("toPage3").onclick = async () => {
         console.log("Assigned task order:", data.task_order);
 
         const displayTask = tasks[task.value][selectedLanguage];
-        const outlineInstructions = `...`; // your existing HTML instructions
+        const outlineInstructions = <div style="font-size: 13px; margin-top: 4px;"> 
+            <p>Requirements:</p> 
+            <ul> 
+                <li>Use only this language when prompting the AI and building your outline.</li> 
+                <li>Focus only on generating ideas and building an outline.</li> 
+                <li>Do not write a full essay.</li> <li>You have 10 minutes.</li> 
+            </ul> 
+            <p>Your outline should include:</p> 
+            <ul> 
+                <li>At least 2 solutions or policies</li> 
+                <li>Supporting reasoning or examples for each solution</li> 
+                <li>Potential limitations or trade-offs of the solutions</li> 
+            </ul> 
+        </div> ;
 
         document.getElementById("taskDisplay").innerHTML =
             `<strong>Task:</strong> ${displayTask}<br>${outlineInstructions}`;
