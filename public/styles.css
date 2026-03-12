@@ -378,11 +378,11 @@ button#sendBtn:active {
 
 @media (min-width: 801px) {
   #taskDisplay {
-    font-size: clamp(8px, 1vw, 16px);
+    font-size: clamp(10px, 1vw, 13px);
   }
 
   #taskDisplay ul,
   #taskDisplay p {
-    font-size: clamp(8px, 1vw, 16px);
+    font-size: clamp(10px, 1vw, 13px);
   }
 }
