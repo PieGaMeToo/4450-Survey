@@ -14,12 +14,13 @@ const db = new Database(path.join(__dirname, "survey.db"));
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS participants (
-  user_id TEXT PRIMARY KEY,
+  user_id TEXT,
   language TEXT,
   task TEXT,
   task_order TEXT,
   final_draft TEXT,
-  created_at TEXT
+  created_at TEXT,
+  PRIMARY KEY(user_id, task_order)
 );
 
 CREATE TABLE IF NOT EXISTS messages (
@@ -53,26 +54,20 @@ app.post("/start-session", (req, res) => {
 
     const timestamp = new Date().toISOString();
 
-    const existing = db.prepare(`
-        SELECT COUNT(*) as count FROM participants WHERE user_id = ?
-    `).get(userId);
+    const existingTasks = db.prepare(`
+    SELECT task_order FROM participants WHERE user_id = ?
+`).all(userId);
 
-    let task_order;
-    if (existing.count === 0) {
-        task_order = "1"; // first task
-        db.prepare(`
-            INSERT INTO participants (user_id, language, task, task_order, created_at)
-            VALUES (?, ?, ?, ?, ?)
-        `).run(userId, language, task, task_order, timestamp);
-    } else {
-        task_order = "2"; // second task
-        // Optional: update existing record if needed
-        db.prepare(`
-            UPDATE participants
-            SET language = ?, task = ?, task_order = ?, created_at = ?
-            WHERE user_id = ?
-        `).run(language, task, task_order, timestamp, userId);
+    if (existingTasks.length >= 2) {
+        return res.status(400).json({ error: "Maximum tasks reached for this participant" });
     }
+
+    let task_order = existingTasks.length === 0 ? "1" : "2";
+
+    db.prepare(`
+    INSERT INTO participants (user_id, language, task, task_order, created_at)
+    VALUES (?, ?, ?, ?, ?)
+`).run(userId, language, task, task_order, timestamp);
 
     res.json({ status: "ok", task_order });
 });
