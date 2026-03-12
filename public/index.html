@@ -33,12 +33,12 @@
 
     <div class="task-list">
       <label class="taskOption">
-        <input type="radio" name="task" value="In many cities, housing costs have increased faster than incomes, making it difficult for many people to afford adequate housing. What policies could governments adopt to improve housing affordability while maintaining economic stability? Discuss and evaluate at least 2 possible solutions.">
+        <input type="radio" name="task" value="task_a">
         Task A
       </label>
 
       <label class="taskOption">
-        <input type="radio" name="task" value="Some cities are experiencing rapid population growth, which puts pressure on infrastructure and public services. What policies could governments adopt to manage urban overcrowding while maintaining economic opportunity and quality of life? Discuss and evaluate at least 2 possible solutions.">
+        <input type="radio" name="task" value="task_b">
         Task B
       </label>
     </div>
@@ -121,6 +121,61 @@ const sendIcon = document.getElementById("sendIcon");
 
 const arrowPath = "M12 5l7 7h-4v7h-6v-7H5z";
 const stopPath = "M8 8h8v8H8z";
+
+const tasks = {
+
+task_a: {
+
+English:
+"In many cities, housing costs have increased faster than incomes, making it difficult for many people to afford adequate housing. What policies could governments adopt to improve housing affordability while maintaining economic stability? Discuss and evaluate at least 2 possible solutions.",
+
+Spanish:
+"En muchas ciudades, los costos de vivienda han aumentado más rápido que los ingresos, lo que dificulta que muchas personas puedan pagar una vivienda adecuada. ¿Qué políticas podrían adoptar los gobiernos para mejorar la asequibilidad de la vivienda mientras mantienen la estabilidad económica? Analice y evalúe al menos dos posibles soluciones.",
+
+Korean:
+"많은 도시에서 주택 비용이 소득보다 더 빠르게 증가하여 많은 사람들이 적절한 주거를 감당하기 어려워지고 있습니다. 정부는 경제적 안정을 유지하면서 주택의 경제성을 개선하기 위해 어떤 정책을 채택할 수 있을까요? 최소 두 가지 가능한 해결책을 논의하고 평가하세요.",
+
+Vietnamese:
+"Ở nhiều thành phố, chi phí nhà ở đã tăng nhanh hơn thu nhập, khiến nhiều người khó có khả năng chi trả cho nhà ở phù hợp. Chính phủ có thể áp dụng những chính sách nào để cải thiện khả năng chi trả nhà ở trong khi vẫn duy trì ổn định kinh tế? Hãy thảo luận và đánh giá ít nhất hai giải pháp khả thi.",
+
+Hindi:
+"कई शहरों में आवास की लागत आय की तुलना में अधिक तेजी से बढ़ी है, जिससे कई लोगों के लिए उचित आवास वहन करना कठिन हो गया है। आर्थिक स्थिरता बनाए रखते हुए आवास की वहनीयता सुधारने के लिए सरकारें कौन-सी नीतियाँ अपना सकती हैं? कम से कम दो संभावित समाधानों पर चर्चा करें और उनका मूल्यांकन करें।",
+
+"Chinese (Simplified)":
+"在许多城市，住房成本上涨速度快于收入增长，使许多人难以负担合适的住房。政府可以采取哪些政策，在保持经济稳定的同时改善住房负担能力？请讨论并评估至少两种可能的解决方案。",
+
+"Chinese (Traditional)":
+"在許多城市，住房成本上漲速度快於收入成長，使許多人難以負擔合適的住房。政府可以採取哪些政策，在維持經濟穩定的同時改善住房負擔能力？請討論並評估至少兩種可能的解決方案。"
+
+},
+
+task_b: {
+
+English:
+"Some cities are experiencing rapid population growth, which puts pressure on infrastructure and public services. What policies could governments adopt to manage urban overcrowding while maintaining economic opportunity and quality of life? Discuss and evaluate at least 2 possible solutions.",
+
+Spanish:
+"Algunas ciudades están experimentando un rápido crecimiento de la población, lo que ejerce presión sobre la infraestructura y los servicios públicos. ¿Qué políticas podrían adoptar los gobiernos para gestionar la sobrepoblación urbana mientras mantienen las oportunidades económicas y la calidad de vida? Analice y evalúe al menos dos posibles soluciones.",
+
+Korean:
+"일부 도시는 급격한 인구 증가를 경험하고 있으며, 이는 기반 시설과 공공 서비스에 부담을 주고 있습니다. 경제적 기회와 삶의 질을 유지하면서 도시 과밀 문제를 관리하기 위해 정부는 어떤 정책을 채택할 수 있을까요? 최소 두 가지 가능한 해결책을 논의하고 평가하세요.",
+
+Vietnamese:
+"Một số thành phố đang trải qua sự gia tăng dân số nhanh chóng, gây áp lực lên cơ sở hạ tầng và dịch vụ công cộng. Chính phủ có thể áp dụng những chính sách nào để quản lý tình trạng quá tải đô thị trong khi vẫn duy trì cơ hội kinh tế và chất lượng cuộc sống? Hãy thảo luận và đánh giá ít nhất hai giải pháp khả thi.",
+
+Hindi:
+"कुछ शहर तेजी से जनसंख्या वृद्धि का अनुभव कर रहे हैं, जिससे बुनियादी ढाँचे और सार्वजनिक सेवाओं पर दबाव पड़ रहा है। आर्थिक अवसरों और जीवन की गुणवत्ता बनाए रखते हुए शहरी भीड़भाड़ को प्रबंधित करने के लिए सरकारें कौन-सी नीतियाँ अपना सकती हैं? कम से कम दो संभावित समाधानों पर चर्चा करें और उनका मूल्यांकन करें।",
+
+"Chinese (Simplified)":
+"一些城市正在经历快速的人口增长，这给基础设施和公共服务带来了压力。政府可以采取哪些政策，在保持经济机会和生活质量的同时管理城市过度拥挤问题？请讨论并评估至少两种可能的解决方案。",
+
+"Chinese (Traditional)":
+"一些城市正在經歷快速的人口成長，這給基礎設施和公共服務帶來了壓力。政府可以採取哪些政策，在維持經濟機會和生活品質的同時管理城市過度擁擠問題？請討論並評估至少兩種可能的解決方案。"
+
+}
+
+};
+
 let currentEventSource = null;
 
 const sendBtn = document.getElementById("sendBtn");
@@ -174,7 +229,7 @@ document.getElementById("toPage3").onclick = async () => {
         return;
     }
 
-    selectedTask = task.value;
+    selectedTask = tasks[task.value].English;
 
     // Start the session
     await fetch("/start-session", {
@@ -187,8 +242,10 @@ document.getElementById("toPage3").onclick = async () => {
         })
     });
 
+    const displayTask = tasks[task.value][selectedLanguage];
+
     document.getElementById("taskDisplay").innerHTML =
-        `<strong>Task:</strong> ${task.value}<br>${outlineInstructions}`;
+    `<strong>Task:</strong> ${displayTask}<br>${outlineInstructions}`;
 
     page2.style.display = "none";
     page3.style.display = "block";
