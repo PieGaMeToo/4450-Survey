@@ -27,7 +27,9 @@ CREATE TABLE IF NOT EXISTS messages (
   user_id TEXT,
   role TEXT,
   content TEXT,
-  timestamp TEXT
+  timestamp TEXT,
+  turn_number INTEGER,
+  edit_index INTEGER
 );
 `);
 
