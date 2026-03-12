@@ -55,19 +55,19 @@ app.post("/start-session", (req, res) => {
     const timestamp = new Date().toISOString();
 
     const existingTasks = db.prepare(`
-    SELECT task_order FROM participants WHERE user_id = ?
-`).all(userId);
+        SELECT task_order FROM participants WHERE user_id = ?
+    `).all([userId]); // <-- fix here
 
     if (existingTasks.length >= 2) {
-        return res.status(400).json({ error: "Maximum tasks reached for this participant" });
+        return res.status(400).json({ error: "Maximum tasks reached" });
     }
 
-    let task_order = existingTasks.length === 0 ? "1" : "2";
+    const task_order = existingTasks.length === 0 ? "1" : "2";
 
     db.prepare(`
-    INSERT INTO participants (user_id, language, task, task_order, created_at)
-    VALUES (?, ?, ?, ?, ?)
-`).run(userId, language, task, task_order, timestamp);
+        INSERT INTO participants (user_id, language, task, task_order, created_at)
+        VALUES (?, ?, ?, ?, ?)
+    `).run(userId, language, task, task_order, timestamp);
 
     res.json({ status: "ok", task_order });
 });
