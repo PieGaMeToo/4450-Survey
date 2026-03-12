@@ -206,23 +206,6 @@ document.getElementById("toPage2").onclick = () => {
 
 document.getElementById("toPage3").onclick = async () => {
     const task = document.querySelector('input[name="task"]:checked');
-    const outlineInstructions = `
-    <div style="font-size: 13px; margin-top: 4px;">
-    <p>Requirements:</p>
-    <ul>
-    <li>Use only this language when prompting the AI and building your outline.</li>
-    <li>Focus only on generating ideas and building an outline.</li>
-    <li>Do not write a full essay.</li>
-    <li>You have 10 minutes.</li>
-    </ul>
-    <p>Your outline should include:</p>
-    <ul>
-    <li>At least 2 solutions or policies</li>
-    <li>Supporting reasoning or examples for each solution</li>
-    <li>Potential limitations or trade-offs of the solutions</li>
-    </ul>
-    </div>
-    `;
 
     if (!task) {
         alert("Please select a task.");
@@ -231,32 +214,45 @@ document.getElementById("toPage3").onclick = async () => {
 
     selectedTask = tasks[task.value].English;
 
-    // Start the session
     let userId = localStorage.getItem("uid");
     if (!userId) {
         userId = crypto.randomUUID();
         localStorage.setItem("uid", userId);
     }
 
-    const response = await fetch("/start-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            userId: userId,
-            language: selectedLanguage,
-            task: selectedTask
-        })
-    });
-    const data = await response.json();
-    console.log("Assigned task order:", data.task_order); // 1 or 2
+    try {
+        const response = await fetch("/start-session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                userId: userId,
+                language: selectedLanguage,
+                task: selectedTask
+            })
+        });
 
-    const displayTask = tasks[task.value][selectedLanguage];
+        if (!response.ok) {
+            const errData = await response.json();
+            alert(errData.error || "Unable to start session. You may have already completed both tasks.");
+            return; // stop here
+        }
 
-    document.getElementById("taskDisplay").innerHTML =
-    `<strong>Task:</strong> ${displayTask}<br>${outlineInstructions}`;
-     
-    page2.style.display = "none";
-    page3.style.display = "block";
+        const data = await response.json();
+        console.log("Assigned task order:", data.task_order);
+
+        const displayTask = tasks[task.value][selectedLanguage];
+        const outlineInstructions = `...`; // your existing HTML instructions
+
+        document.getElementById("taskDisplay").innerHTML =
+            `<strong>Task:</strong> ${displayTask}<br>${outlineInstructions}`;
+
+        page2.style.display = "none";
+        page3.style.display = "block";
+
+    } catch (err) {
+        console.error("Failed to start session:", err);
+        alert("An unexpected error occurred. Please try again.");
+    }
 };
 
 document.getElementById("submitDraftBtn").onclick = async () => {
