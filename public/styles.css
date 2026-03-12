@@ -375,3 +375,14 @@ button#sendBtn:active {
   }
 
 }
+
+@media (min-width: 801px) {
+  #taskDisplay {
+    font-size: clamp(8px, 1vw, 16px);
+  }
+
+  #taskDisplay ul,
+  #taskDisplay p {
+    font-size: clamp(8px, 1vw, 16px);
+  }
+}
