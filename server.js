@@ -176,7 +176,7 @@ app.get("/chat-stream-sse", async (req, res) => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    model: "llama3.1:8b",
+                    model: "gemma2:2b",
                     messages: convo,
                     stream: true
                 })
