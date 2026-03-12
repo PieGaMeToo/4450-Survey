@@ -232,7 +232,13 @@ document.getElementById("toPage3").onclick = async () => {
     selectedTask = tasks[task.value].English;
 
     // Start the session
-    await fetch("/start-session", {
+    let userId = localStorage.getItem("uid");
+    if (!userId) {
+        userId = crypto.randomUUID();
+        localStorage.setItem("uid", userId);
+    }
+
+    const response = await fetch("/start-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -241,12 +247,14 @@ document.getElementById("toPage3").onclick = async () => {
             task: selectedTask
         })
     });
+    const data = await response.json();
+    console.log("Assigned task order:", data.task_order); // 1 or 2
 
     const displayTask = tasks[task.value][selectedLanguage];
 
     document.getElementById("taskDisplay").innerHTML =
     `<strong>Task:</strong> ${displayTask}<br>${outlineInstructions}`;
-
+     
     page2.style.display = "none";
     page3.style.display = "block";
 };

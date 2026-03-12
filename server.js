@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS participants (
   user_id TEXT PRIMARY KEY,
   language TEXT,
   task TEXT,
+  task_order TEXT,
   final_draft TEXT,
   created_at TEXT
 );
@@ -47,7 +48,6 @@ function initializeConversation(userId) {
 }
 
 app.post("/start-session", (req, res) => {
-
     const { userId, language, task } = req.body;
 
     if (!userId) {
@@ -56,14 +56,28 @@ app.post("/start-session", (req, res) => {
 
     const timestamp = new Date().toISOString();
 
+    // Check if this user already has a participant record
+    const existing = db.prepare(`
+        SELECT COUNT(*) as count FROM participants WHERE user_id = ?
+    `).get(userId);
+
+    let task_order = "1"; // default first task
+    if (existing && existing.count > 0) {
+        task_order = "2"; // second task
+    }
+
     db.prepare(`
-        INSERT OR REPLACE INTO participants
-        (user_id, language, task, created_at)
-        VALUES (?, ?, ?, ?)
-    `).run(userId, language, task, timestamp);
+        INSERT INTO participants (user_id, language, task, task_order, created_at)
+        VALUES (?, ?, ?, ?, ?)
+    `).run(
+        userId,
+        language,
+        task,
+        task_order,
+        timestamp
+    );
 
-    res.json({ status: "ok" });
-
+    res.json({ status: "ok", task_order });
 });
 
 app.post("/submit-draft", (req, res) => {
