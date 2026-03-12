@@ -288,7 +288,7 @@ function formatResponse(text) {
 const chatBox = document.getElementById("chatBox");
 
 function isAtBottom() {
-    const threshold = 40; // px tolerance
+    const threshold = 80; // px tolerance
     return chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < threshold;
 }
 
@@ -435,40 +435,48 @@ function sendMessage() {
         const loader = chatBox.querySelector(".aiLoading");
         if (loader) loader.remove();
 
-        if (!chatBox.lastChild || !chatBox.lastChild.classList.contains("ai")) {
+        if (data.partial) {
 
-            const messageIndex = chatBox.children.length;
-
-            const msgDiv = document.createElement("div");
-            msgDiv.className = "chat-message ai";
-            msgDiv.dataset.index = messageIndex;
-
-            const textDiv = document.createElement("div");
-            textDiv.className = "aiText";
             const shouldScroll = isAtBottom();
 
-            textDiv.innerHTML = formatResponse(data.partial);
+            const loader = chatBox.querySelector(".aiLoading");
+            if (loader) loader.remove();
+
+            if (!chatBox.lastChild || !chatBox.lastChild.classList.contains("ai")) {
+
+                const messageIndex = chatBox.children.length;
+
+                const msgDiv = document.createElement("div");
+                msgDiv.className = "chat-message ai";
+                msgDiv.dataset.index = messageIndex;
+
+                const textDiv = document.createElement("div");
+                textDiv.className = "aiText";
+                textDiv.innerHTML = formatResponse(data.partial);
+
+                const regenBtn = document.createElement("button");
+                regenBtn.textContent = "↻";
+                regenBtn.className = "regenBtn";
+                regenBtn.onclick = () => regenerateResponse(msgDiv);
+
+                msgDiv.appendChild(textDiv);
+                msgDiv.appendChild(regenBtn);
+
+                chatBox.appendChild(msgDiv);
+
+            } 
+            else {
+
+                const textDiv = chatBox.lastChild.querySelector(".aiText");
+
+                if (textDiv) {
+                    textDiv.innerHTML = formatResponse(data.partial);
+                }
+
+            }
 
             if (shouldScroll) {
                 chatBox.scrollTop = chatBox.scrollHeight;
-            }
-
-            const regenBtn = document.createElement("button");
-            regenBtn.textContent = "↻";
-            regenBtn.className = "regenBtn";
-            regenBtn.onclick = () => regenerateResponse(msgDiv);
-
-            msgDiv.appendChild(textDiv);
-            msgDiv.appendChild(regenBtn);
-
-            chatBox.appendChild(msgDiv);
-
-        } 
-        else {
-
-            const textDiv = chatBox.lastChild.querySelector(".aiText");
-            if(textDiv){
-                textDiv.innerHTML = formatResponse(data.partial);
             }
 
         }
