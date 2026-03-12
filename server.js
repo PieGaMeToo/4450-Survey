@@ -9,7 +9,6 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
-app.use(express.static(path.join(__dirname, "public")));
 
 const db = new Database(path.join(__dirname, "survey.db"));
 
@@ -305,6 +304,8 @@ app.get("/chat-stream-sse", async (req, res) => {
     }
 
 });
+
+app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/health", (req, res) => {
     res.send("Survey server running.");
