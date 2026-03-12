@@ -49,35 +49,34 @@ function initializeConversation(userId) {
 app.post("/start-session", (req, res) => {
     const { userId, language, task } = req.body;
 
-    if (!userId) {
-        return res.status(400).json({ error: "Missing userId" });
-    }
+    if (!userId) return res.status(400).json({ error: "Missing userId" });
 
     const timestamp = new Date().toISOString();
 
-    // Check if this user already has a participant record
     const existing = db.prepare(`
         SELECT COUNT(*) as count FROM participants WHERE user_id = ?
     `).get(userId);
 
-    let task_order = "1"; // default first task
-    if (existing && existing.count > 0) {
+    let task_order;
+    if (existing.count === 0) {
+        task_order = "1"; // first task
+        db.prepare(`
+            INSERT INTO participants (user_id, language, task, task_order, created_at)
+            VALUES (?, ?, ?, ?, ?)
+        `).run(userId, language, task, task_order, timestamp);
+    } else {
         task_order = "2"; // second task
+        // Optional: update existing record if needed
+        db.prepare(`
+            UPDATE participants
+            SET language = ?, task = ?, task_order = ?, created_at = ?
+            WHERE user_id = ?
+        `).run(language, task, task_order, timestamp, userId);
     }
-
-    db.prepare(`
-        INSERT INTO participants (user_id, language, task, task_order, created_at)
-        VALUES (?, ?, ?, ?, ?)
-    `).run(
-        userId,
-        language,
-        task,
-        task_order,
-        timestamp
-    );
 
     res.json({ status: "ok", task_order });
 });
+
 
 app.post("/submit-draft", (req, res) => {
 
