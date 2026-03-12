@@ -286,6 +286,12 @@ function formatResponse(text) {
 }
 
 const chatBox = document.getElementById("chatBox");
+
+function isAtBottom() {
+    const threshold = 40; // px tolerance
+    return chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < threshold;
+}
+
 function addMessage(content, sender, index=null) {
 
     const msgDiv = document.createElement("div");
@@ -313,8 +319,13 @@ function addMessage(content, sender, index=null) {
         msgDiv.appendChild(regenBtn);
     }
 
+    const shouldScroll = isAtBottom();
+
     chatBox.appendChild(msgDiv);
-    chatBox.scrollTop = chatBox.scrollHeight;
+
+    if (shouldScroll) {
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
 }
 
 function showLoadingBubble(){
@@ -330,9 +341,13 @@ function showLoadingBubble(){
 
     msgDiv.appendChild(spinner);
 
+    const shouldScroll = isAtBottom();
+
     chatBox.appendChild(msgDiv);
 
-    chatBox.scrollTop = chatBox.scrollHeight;
+    if (shouldScroll) {
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
 }
 
@@ -430,7 +445,13 @@ function sendMessage() {
 
             const textDiv = document.createElement("div");
             textDiv.className = "aiText";
+            const shouldScroll = isAtBottom();
+
             textDiv.innerHTML = formatResponse(data.partial);
+
+            if (shouldScroll) {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
 
             const regenBtn = document.createElement("button");
             regenBtn.textContent = "↻";
