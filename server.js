@@ -116,6 +116,10 @@ app.get("/chat-stream-sse", async (req, res) => {
         Assistant: "I’m sorry, but I can only respond in ${lang}."
 
         Never output even a single word in another language.
+        You must answer follow-up questions by referring to your previous responses in the conversation.
+        Do not generate new lists unless the user explicitly asks for new ideas.
+        For example, if the user asks "Can you expand on idea #2?", you should provide more details about idea #2 from your previous response, rather than creating a new idea. 
+        Always ensure your responses are consistent with the conversation history and do not contradict yourself.
         `;
     }
 
