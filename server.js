@@ -186,6 +186,28 @@ app.get("/chat-stream-sse", async (req, res) => {
         );
 
         let botReply = "";
+        let replySaved = false;
+
+        req.on("close", () => {
+            if (!replySaved && botReply.length > 0) {
+                try {
+                    db.prepare(`
+            INSERT INTO messages (user_id, role, content, timestamp, turn_number, edit_index)
+            VALUES (?, ?, ?, ?, ?, ?)
+            `).run(
+                        userId,
+                        "assistant",
+                        botReply,
+                        new Date().toISOString(),
+                        turnCounter[userId],
+                        editIndex || null
+                    );
+                    console.log("Saved partial AI response");
+                } catch (e) {
+                    console.error("Failed to save partial response", e);
+                }
+            }
+        });
 
         for await (const chunk of ollamaResponse.body) {
 
@@ -214,8 +236,6 @@ app.get("/chat-stream-sse", async (req, res) => {
             }
 
         }
-
-        const detectedLang = franc(botReply);
 
         const langMap = {
             English: "eng",
@@ -251,6 +271,7 @@ app.get("/chat-stream-sse", async (req, res) => {
             turnCounter[userId],
             editIndex || null
         );
+        replySaved = true;
 
         res.write(
             `data: ${JSON.stringify({ done: true, reply: botReply })}\n\n`
