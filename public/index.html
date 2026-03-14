@@ -608,9 +608,13 @@ function sendMessage() {
     sendBtn.disabled = false;
 
     const draftContent = document.getElementById("draftBox").value.trim();
-    let fullMessage =
-    `Task: ${selectedTask}
+    const taskPrompt = tasks[selectedTask][selectedLanguage];
 
+    let fullMessage =
+    `Task prompt:
+    ${taskPrompt}
+
+    User message:
     ${message}`;
 
     if (draftContent) {

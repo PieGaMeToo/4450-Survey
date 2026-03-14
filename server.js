@@ -40,7 +40,14 @@ function initializeConversation(userId) {
     conversations[userId] = [
         {
             role: "system",
-            content: "You are a helpful AI assistant."
+            content: `
+            You are a helpful AI assistant helping a student build an outline.
+
+            Task prompt:
+            ${taskPrompt}
+
+            The student must produce an outline (not a full essay).
+            `
         }
     ];
 
