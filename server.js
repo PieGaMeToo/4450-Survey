@@ -151,7 +151,13 @@ app.get("/chat-stream-sse", async (req, res) => {
         `;
     }
 
-    const editIndex = req.query.editIndex;
+    let editIndex = req.query.editIndex;
+
+    if (editIndex === "" || editIndex === undefined || editIndex === "null") {
+        editIndex = null;
+    } else {
+        editIndex = parseInt(editIndex);
+    }
 
     if (editIndex !== undefined && editIndex !== "" && editIndex !== "null") {
 

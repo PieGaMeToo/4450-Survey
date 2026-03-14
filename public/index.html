@@ -641,8 +641,10 @@ function sendMessage() {
 
     streamFinished = false;
 
+    const editParam = editingIndex !== null ? `&editIndex=${editingIndex}` : "";
+
     currentEventSource = new EventSource(
-        `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(fullMessage)}&lang=${encodeURIComponent(lang)}&editIndex=${editingIndex ?? ""}`
+        `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(fullMessage)}&lang=${encodeURIComponent(lang)}${editParam}`
     );
     const evtSource = currentEventSource;
 
