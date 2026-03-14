@@ -82,7 +82,9 @@
 
         <textarea id="draftBox"></textarea>
 
-        <button id="submitDraftBtn" class="submitBtn">Submit Draft</button>
+        <div id="wordCounter" class="wordCounter">Word count: 0 / 50</div>
+
+        <button id="submitDraftBtn" class="submitBtn" disabled>Submit Outline</button>
 
       </div>
 
@@ -307,6 +309,50 @@ let timerStarted = false;
 
 const aiInput = document.getElementById("aiInput");
 
+const draftBox = document.getElementById("draftBox");
+const submitBtn = document.getElementById("submitDraftBtn");
+const wordCounter = document.getElementById("wordCounter");
+
+submitBtn.disabled = true;
+submitBtn.style.opacity = "0.5";
+submitBtn.style.cursor = "not-allowed";
+
+function countWords(text) {
+    return text
+        .trim()
+        .split(/\s+/)
+        .filter(word => word.length > 0)
+        .length;
+}
+
+draftBox.addEventListener("input", () => {
+
+    const words = countWords(draftBox.value);
+
+    wordCounter.textContent = `Word count: ${words} / 50`;
+
+    if (words >= 50) {
+
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = "1";
+        submitBtn.style.cursor = "pointer";
+
+        wordCounter.classList.remove("wordLow");
+        wordCounter.classList.add("wordGood");
+
+    } else {
+
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = "0.5";
+        submitBtn.style.cursor = "not-allowed";
+
+        wordCounter.classList.remove("wordGood");
+        wordCounter.classList.add("wordLow");
+
+    }
+
+});
+
 aiInput.disabled = true;
 sendBtn.disabled = true;
 sendBtn.style.opacity = "0.5";
@@ -347,10 +393,33 @@ startTimerBtn.onclick = () => {
 
             clearInterval(timerInterval);
 
-            alert("Time is up! Your draft will now be submitted.");
+            alert("Time is up! You can no longer chat with the AI.");
 
-            page3.style.display = "none";
-            page4.style.display = "block";
+            // disable AI input
+            aiInput.disabled = true;
+            sendBtn.disabled = true;
+            sendBtn.style.opacity = "0.5";
+            sendBtn.style.cursor = "not-allowed";
+
+            // stop AI generation if it is running
+            if (aiGenerating && currentEventSource) {
+                currentEventSource.close();
+                currentEventSource = null;
+                aiGenerating = false;
+            }
+
+            // restore send icon
+            sendIcon.querySelector("path").setAttribute("d", arrowPath);
+
+            const chatContainer = document.querySelector(".chat-container");
+
+            chatContainer.classList.add("aiLocked");
+
+            const overlay = document.createElement("div");
+            overlay.className = "aiLockedOverlay";
+            overlay.innerText = "AI assistance time has ended.";
+
+            chatContainer.appendChild(overlay);
         }
 
     }, 1000);

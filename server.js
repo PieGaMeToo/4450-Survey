@@ -81,6 +81,18 @@ app.post("/submit-draft", (req, res) => {
         return res.status(400).json({ error: "Missing userId" });
     }
 
+    if (!draft) {
+        return res.status(400).json({ error: "Draft is empty" });
+    }
+
+    const wordCount = draft.trim().split(/\s+/).filter(w => w.length > 0).length;
+
+    if (wordCount < 50) {
+        return res.status(400).json({
+            error: "Please ensure that your outline is at least 50 words long and includes all the requirements from the task."
+        });
+    }
+
     db.prepare(`
         UPDATE participants
         SET final_draft = ?

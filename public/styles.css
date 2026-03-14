@@ -227,6 +227,41 @@ button#sendBtn:active {
   cursor:pointer;
 }
 
+.aiLocked {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.aiLockedOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #444;
+    font-size: 14px;
+}
+
+.wordCounter {
+    font-size: 13px;
+    margin-top: 6px;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.wordLow {
+    color: #cc0000;
+}
+
+.wordGood {
+    color: #0a8a0a;
+}
+
 #languageSelect,
 #otherLanguageInput {
   padding: 10px 12px;
