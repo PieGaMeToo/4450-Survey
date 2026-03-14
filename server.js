@@ -41,13 +41,13 @@ function initializeConversation(userId) {
         {
             role: "system",
             content: `
-            You are a helpful AI assistant helping a student build an outline.
+You are a helpful AI assistant helping a student build an outline.
 
-            Task prompt:
-            ${taskPrompt}
+The student is completing an academic outline task.
+They must produce an outline (not a full essay).
 
-            The student must produce an outline (not a full essay).
-            `
+Follow all system instructions strictly.
+`
         }
     ];
 
