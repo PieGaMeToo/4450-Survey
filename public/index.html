@@ -113,6 +113,9 @@ function getURLParam(name) {
     return params.get(name);
 }
 
+let selectedLanguage = "";
+let selectedTask = "";
+
 const urlPID = getURLParam("pid");
 const urlLanguage = getURLParam("language");
 const urlTask = getURLParam("task");
@@ -124,9 +127,6 @@ if (urlLanguage) {
 if (urlTask) {
     selectedTask = urlTask;
 }
-
-let selectedLanguage = "";
-let selectedTask = "";
 
 let editingIndex = null;
 let originalText = "";
@@ -211,7 +211,7 @@ const page4 = document.getElementById("page4");
 if (urlLanguage && urlTask) {
 
     selectedLanguage = urlLanguage;
-    selectedTask = tasks[urlTask].English;
+    selectedTask = urlTask;
 
     const displayTask = tasks[urlTask][selectedLanguage];
 
@@ -269,7 +269,7 @@ document.getElementById("toPage3").onclick = async () => {
         return;
     }
 
-    selectedTask = tasks[task.value].English;
+    selectedTask = urlTask;
 
     let userId = localStorage.getItem("uid");
     if (!userId) {
