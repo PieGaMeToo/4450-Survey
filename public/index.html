@@ -107,7 +107,24 @@
 </div>
 
 <script>
-let userId = localStorage.getItem("uid");
+let userId = getURLParam("pid") || localStorage.getItem("uid");
+function getURLParam(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+}
+
+const urlPID = getURLParam("pid");
+const urlLanguage = getURLParam("language");
+const urlTask = getURLParam("task");
+
+if (urlLanguage) {
+    selectedLanguage = urlLanguage;
+}
+
+if (urlTask) {
+    selectedTask = urlTask;
+}
+
 let selectedLanguage = "";
 let selectedTask = "";
 
@@ -190,6 +207,44 @@ const page1 = document.getElementById("page1");
 const page2 = document.getElementById("page2");
 const page3 = document.getElementById("page3");
 const page4 = document.getElementById("page4");
+
+if (urlLanguage && urlTask) {
+
+    selectedLanguage = urlLanguage;
+    selectedTask = tasks[urlTask].English;
+
+    const displayTask = tasks[urlTask][selectedLanguage];
+
+    const outlineInstructions = `
+    <div style="font-size: 13px; margin-top: 4px;">
+        <p>Requirements:</p>
+        <ul>
+            <li>Use only your assigned language when prompting the AI and building your outline.</li>
+            <li>Focus only on generating ideas and building an outline.</li>
+            <li>Do not write a full essay, but it must be at least 50 words.</li>
+            <li>You have 10 minutes.</li>
+        </ul>
+        <p>Your outline should include:</p>
+        <ul>
+            <li>At least 2 solutions or policies</li>
+            <li>Supporting reasoning or examples for each solution</li>
+            <li>Potential limitations or trade-offs of the solutions</li>
+        </ul>
+        <p class="RedLine">
+        Note: The AI already understands the task prompt and requirements in your assigned language.
+        You do not need to repeat or paste them again when prompting the AI.
+        </p>
+    </div>
+    `;
+
+    document.getElementById("taskDisplay").innerHTML =
+        `<strong>Task:</strong> ${displayTask}<br>${outlineInstructions}`;
+
+    page1.style.display = "none";
+    page2.style.display = "none";
+    page3.style.display = "block";
+
+}
 
 document.getElementById("toPage2").onclick = () => {
 
