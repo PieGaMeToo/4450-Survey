@@ -213,6 +213,19 @@ if (urlLanguage && urlTask) {
     selectedLanguage = urlLanguage;
     selectedTask = urlTask;
 
+    // START SESSION so the participant is recorded
+    fetch("/start-session", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            userId: userId,
+            language: selectedLanguage,
+            task: selectedTask
+        })
+    });
+
     const displayTask = tasks[urlTask][selectedLanguage];
 
     const outlineInstructions = `
@@ -243,7 +256,6 @@ if (urlLanguage && urlTask) {
     page1.style.display = "none";
     page2.style.display = "none";
     page3.style.display = "block";
-
 }
 
 document.getElementById("toPage2").onclick = () => {
@@ -269,7 +281,7 @@ document.getElementById("toPage3").onclick = async () => {
         return;
     }
 
-    selectedTask = urlTask;
+    selectedTask = task.value;
 
     let userId = localStorage.getItem("uid");
     if (!userId) {
