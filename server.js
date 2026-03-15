@@ -89,22 +89,22 @@ app.post("/submit-draft", (req, res) => {
     }
 
     if (!draft) {
-        return res.status(400).json({ error: "Draft is empty" });
+        draft = "";
     }
 
     const wordCount = draft.trim().split(/\s+/).filter(w => w.length > 0).length;
 
+    let finalDraft = draft;
+
     if (wordCount < 50) {
-        return res.status(400).json({
-            error: "Please ensure that your outline is at least 50 words long and includes all the requirements from the task."
-        });
+        finalDraft = "Invalid Response, Less Than 50 Words";
     }
 
     db.prepare(`
         UPDATE participants
         SET final_draft = ?
         WHERE user_id = ?
-    `).run(draft, userId);
+    `).run(finalDraft, userId);
 
     res.json({ status: "saved" });
 

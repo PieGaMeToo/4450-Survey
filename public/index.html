@@ -461,33 +461,41 @@ startTimerBtn.onclick = () => {
 
             clearInterval(timerInterval);
 
-            alert("Time is up! You can no longer chat with the AI.");
-
-            // disable AI input
-            aiInput.disabled = true;
-            sendBtn.disabled = true;
-            sendBtn.style.opacity = "0.5";
-            sendBtn.style.cursor = "not-allowed";
-
-            // stop AI generation if it is running
+            // stop AI if it is generating
             if (aiGenerating && currentEventSource) {
                 currentEventSource.close();
                 currentEventSource = null;
                 aiGenerating = false;
             }
 
-            // restore send icon
-            sendIcon.querySelector("path").setAttribute("d", arrowPath);
+            // disable AI input
+            aiInput.disabled = true;
+            sendBtn.disabled = true;
 
-            const chatContainer = document.querySelector(".chat-container");
+            const draft = document.getElementById("draftBox").value;
 
-            chatContainer.classList.add("aiLocked");
+            // auto submit outline
+            fetch("/submit-draft", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    userId: userId,
+                    language: selectedLanguage,
+                    task: selectedTask,
+                    draft: draft
+                })
+            }).then(() => {
 
-            const overlay = document.createElement("div");
-            overlay.className = "aiLockedOverlay";
-            overlay.innerText = "AI assistance time has ended.";
+                page3.style.display = "none";
+                page4.style.display = "block";
 
-            chatContainer.appendChild(overlay);
+            }).catch(err => {
+                console.error("Auto submit failed:", err);
+                page3.style.display = "none";
+                page4.style.display = "block";
+            });
         }
 
     }, 1000);
