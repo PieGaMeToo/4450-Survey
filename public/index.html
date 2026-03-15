@@ -226,7 +226,7 @@ if (urlLanguage && urlTask) {
         })
     });
 
-    const displayTask = tasks[urlTask][0];
+    const displayTask = tasks[urlTask]["English"];
 
     const outlineInstructions = `
     <div style="font-size: 13px; margin-top: 4px;">
@@ -235,7 +235,7 @@ if (urlLanguage && urlTask) {
             <li>Use only your assigned language when prompting the AI and building your outline.</li>
             <li>Focus only on generating ideas and building an outline.</li>
             <li>Do not write a full essay, but it must be at least 50 words.</li>
-            <li>You have 10 minutes in total to <b>both</b> interact with the AI and create your outline.</li>
+            <li>You have 10 minutes.</li>
         </ul>
         <p>Your outline should include:</p>
         <ul>
