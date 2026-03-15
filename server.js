@@ -82,7 +82,7 @@ app.post("/start-session", (req, res) => {
 
 app.post("/submit-draft", (req, res) => {
 
-    const { userId, draft } = req.body;
+    const { userId, taskOrder, draft } = req.body;
 
     if (!userId) {
         return res.status(400).json({ error: "Missing userId" });
@@ -103,8 +103,8 @@ app.post("/submit-draft", (req, res) => {
     db.prepare(`
         UPDATE participants
         SET final_draft = ?
-        WHERE user_id = ?
-    `).run(finalDraft, userId);
+        WHERE user_id = ? AND task_order = ?
+    `).run(finalDraft, userId, taskOrder);
 
     res.json({ status: "saved" });
 

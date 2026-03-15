@@ -115,6 +115,7 @@ function getURLParam(name) {
 
 let selectedLanguage = "";
 let selectedTask = "";
+let taskOrder = null;
 
 const urlPID = getURLParam("pid");
 const urlLanguage = getURLParam("language");
@@ -308,6 +309,7 @@ document.getElementById("toPage3").onclick = async () => {
 
         const data = await response.json();
         console.log("Assigned task order:", data.task_order);
+        taskOrder = data.task_order;
 
         const displayTask = tasks[task.value][selectedLanguage];
         const outlineInstructions = `
@@ -360,6 +362,7 @@ document.getElementById("submitDraftBtn").onclick = async () => {
         },
         body: JSON.stringify({
             userId: userId,
+            taskOrder: taskOrder,
             language: selectedLanguage,
             task: selectedTask,
             draft: draft
@@ -482,6 +485,7 @@ startTimerBtn.onclick = () => {
                 },
                 body: JSON.stringify({
                     userId: userId,
+                    taskOrder: taskOrder,
                     language: selectedLanguage,
                     task: selectedTask,
                     draft: draft
