@@ -82,14 +82,14 @@ app.post("/start-session", (req, res) => {
 
 app.post("/submit-draft", (req, res) => {
 
-    const { userId, taskOrder, draft } = req.body;
-
-    if (!userId) {
-        return res.status(400).json({ error: "Missing userId" });
-    }
+    let { userId, taskOrder, draft } = req.body;
 
     if (!draft) {
         draft = "";
+    }
+
+    if (!userId) {
+        return res.status(400).json({ error: "Missing userId" });
     }
 
     const wordCount = draft.trim().split(/\s+/).filter(w => w.length > 0).length;

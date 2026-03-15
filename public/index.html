@@ -214,7 +214,6 @@ if (urlLanguage && urlTask) {
     selectedLanguage = urlLanguage;
     selectedTask = urlTask;
 
-    // START SESSION so the participant is recorded
     fetch("/start-session", {
         method: "POST",
         headers: {
@@ -225,6 +224,11 @@ if (urlLanguage && urlTask) {
             language: selectedLanguage,
             task: selectedTask
         })
+    })
+    .then(res => res.json())
+    .then(data => {
+        taskOrder = data.task_order;
+        console.log("Assigned task order:", taskOrder);
     });
 
     const displayTask = tasks[urlTask]["English"];
