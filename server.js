@@ -103,7 +103,7 @@ app.post("/submit-draft", (req, res) => {
 
     db.prepare(`
         UPDATE participants
-        SET final_draft = ?
+        SET final_draft = ?, completed = 1
         WHERE user_id = ? AND task_order = ?
     `).run(finalDraft, userId, taskOrder);
 
@@ -324,6 +324,27 @@ app.get("/chat-stream-sse", async (req, res) => {
     }
 
 });
+
+appapp.get("/task-status", (req, res) => {
+
+    const userId = req.query.userId;
+
+    if (!userId) {
+        return res.json({ completedTasks: 0 });
+    }
+
+    const rows = db.prepare(`
+        SELECT COUNT(*) as count
+        FROM drafts
+        WHERE user_id = ? AND completed = 1
+    `).get(userId);
+
+    res.json({
+        completedTasks: rows.count
+    });
+
+});
+
 
 app.use(express.static(path.join(__dirname, "public")));
 
