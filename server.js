@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS participants (
   task TEXT,
   task_order TEXT,
   final_draft TEXT,
+  completed INTEGER DEFAULT 0,
   created_at TEXT,
   PRIMARY KEY(user_id, task_order)
 );
