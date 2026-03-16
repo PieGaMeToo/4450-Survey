@@ -8,7 +8,12 @@ const { franc } = require("franc");
 const app = express();
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: [
+        "https://cornell.yul1.qualtrics.com",
+        "https://www.4450survey.org"
+    ]
+}));
 
 const db = new Database(path.join(__dirname, "survey.db"));
 
@@ -325,7 +330,7 @@ app.get("/chat-stream-sse", async (req, res) => {
 
 });
 
-appapp.get("/task-status", (req, res) => {
+app.get("/task-status", (req, res) => {
 
     const userId = req.query.userId;
 
@@ -333,14 +338,14 @@ appapp.get("/task-status", (req, res) => {
         return res.json({ completedTasks: 0 });
     }
 
-    const rows = db.prepare(`
+    const row = db.prepare(`
         SELECT COUNT(*) as count
-        FROM drafts
+        FROM participants
         WHERE user_id = ? AND completed = 1
     `).get(userId);
 
     res.json({
-        completedTasks: rows.count
+        completedTasks: row.count
     });
 
 });
