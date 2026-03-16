@@ -69,7 +69,7 @@ app.post("/start-session", (req, res) => {
 
     const existingTasks = db.prepare(`
         SELECT task_order FROM participants WHERE user_id = ?
-    `).all([userId]); // <-- fix here
+    `).all(userId);
 
     if (existingTasks.length >= 2) {
         return res.status(400).json({ error: "Maximum tasks reached" });
