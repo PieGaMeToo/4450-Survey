@@ -1,5 +1,9 @@
 * { box-sizing: border-box; }
 
+html, body {
+  height: 100%;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -11,22 +15,23 @@ body {
 
 .page {
   width: 100%;
-  max-width: 100%;
   margin: 0;
   padding: 20px;
-  height: 100vh;
+
+  min-height: 100vh;
+  height: 100dvh;
+
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+
   align-items: center;
-  overflow: hidden;
 }
 
 .layout {
   display: flex;
   gap: 20px;
   width: 100%;
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
 }
 
@@ -41,7 +46,6 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  height: clamp(300px, 60vh, 700px);
 }
 
 .draft-container {
@@ -49,19 +53,13 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  height: clamp(300px, 60vh, 700px);
-}
-
-.chat-box,
-.draft-container textarea#draftBox {
-  flex: 1;
-  min-height: 0;
 }
 
 .chat-box {
-  flex: 1;
+  flex: 1 1 auto;
   padding: 10px;
   border-radius: 12px;
+  min-height: 0;
   background: #fefefe;
   border: 1px solid #d1d5db;
   overflow-y: auto;
@@ -69,6 +67,11 @@ body {
   flex-direction: column;
   gap: 10px;
   width: 100%;
+}
+
+.draft-container textarea#draftBox {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 
