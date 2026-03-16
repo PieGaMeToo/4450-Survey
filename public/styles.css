@@ -5,7 +5,7 @@ html, body {
 }
 
 .container {
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -20,23 +20,21 @@ body {
 }
 
 .page {
-  width: 100%;
-  padding: 20px;
-
   flex: 1;
   display: flex;
   flex-direction: column;
 
-  align-items: center;
+  width: 100%;
+  padding: 20px;
+
   min-height: 0;
 }
 
 .layout {
+  flex: 1;
   display: flex;
   gap: 20px;
   width: 100%;
-
-  flex: 1;
   min-height: 0;
 }
 
