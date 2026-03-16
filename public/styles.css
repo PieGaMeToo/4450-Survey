@@ -8,6 +8,7 @@ html, body {
   height: 100dvh;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 body {
@@ -20,7 +21,7 @@ body {
 }
 
 .page {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
 
@@ -31,7 +32,7 @@ body {
 }
 
 .layout {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   gap: 20px;
   width: 100%;
@@ -44,22 +45,16 @@ body {
   margin-top: 10px;
 }
 
-.chat-container {
-  flex: 2;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
+.chat-container,
 .draft-container {
-  flex: 1;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   min-height: 0;
 }
 
 .chat-box {
-  flex: 1;
+  flex: 1 1 auto;
   padding: 10px;
   border-radius: 12px;
   min-height: 0;
@@ -73,7 +68,7 @@ body {
 }
 
 .draft-container textarea#draftBox {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
 }
 
