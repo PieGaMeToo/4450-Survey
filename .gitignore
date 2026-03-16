@@ -3,3 +3,4 @@ survey.db
 chat_logs.json
 .env
 *.log
+*.mp4
