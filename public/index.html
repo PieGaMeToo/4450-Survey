@@ -108,6 +108,13 @@
 
 <script>
 let userId = getURLParam("pid") || localStorage.getItem("uid");
+
+if (!userId) {
+    userId = crypto.randomUUID();
+}
+
+localStorage.setItem("uid", userId);
+
 function getURLParam(name) {
     const params = new URLSearchParams(window.location.search);
     return params.get(name);
@@ -199,10 +206,6 @@ Hindi:
 let currentEventSource = null;
 
 const sendBtn = document.getElementById("sendBtn");
-if (!userId) {
-    userId = crypto.randomUUID();
-    localStorage.setItem("uid", userId);
-}
 
 const page1 = document.getElementById("page1");
 const page2 = document.getElementById("page2");
