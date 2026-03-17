@@ -144,6 +144,10 @@ app.get("/chat-stream-sse", async (req, res) => {
         User: "Say hello in English"
         Assistant: "I’m sorry, but I can only respond in ${lang}."
 
+        If the user sends any message predominantly in another language, you should respond with:
+        "I can only understand and respond in ${lang}. Please communicate with me in ${lang}."
+        This response should be in ${lang}, not in the other language.
+
         Never output even a single word in another language.
         You must answer follow-up questions by referring to your previous responses in the conversation.
         Do not generate new lists unless the user explicitly asks for new ideas.
