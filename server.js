@@ -135,6 +135,32 @@ app.get("/chat-stream-sse", async (req, res) => {
         return res.status(400).end();
     }
 
+    const langMap = {
+        English: "eng",
+        Spanish: "spa",
+        Vietnamese: "vie",
+        Korean: "kor",
+        Hindi: "hin",
+        "Chinese (Simplified)": "cmn",
+        "Chinese (Traditional)": "cmn"
+    };
+
+    const detectedLang = franc(message);
+
+    if (langMap[lang] && detectedLang !== langMap[lang] && detectedLang !== "und") {
+        const refusal = getRefusalMessage(lang);
+
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+
+        res.flushHeaders();
+        res.write(":\n\n");
+
+        res.write(`data: ${JSON.stringify({ done: true, reply: refusal })}\n\n`);
+        return res.end();
+    }
+
     if (!conversations[userId]) {
         initializeConversation(userId);
     }
@@ -272,25 +298,6 @@ app.get("/chat-stream-sse", async (req, res) => {
 
             }
 
-        }
-
-        const langMap = {
-            English: "eng",
-            Spanish: "spa",
-            Vietnamese: "vie",
-            Korean: "kor",
-            Hindi: "hin",
-            "Chinese (Simplified)": "cmn",
-            "Chinese (Traditional)": "cmn"
-        };
-
-        const detectedLang = franc(message);
-        if (langMap[lang] && detectedLang !== langMap[lang] && detectedLang !== "und") {
-            const refusal = getRefusalMessage(lang);
-            convo.push({ role: "assistant", content: refusal });
-
-            res.write(`data: ${JSON.stringify({ done: true, reply: refusal })}\n\n`);
-            return res.end();
         }
 
         convo.push({
