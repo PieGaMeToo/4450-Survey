@@ -55,6 +55,20 @@ You are a helpful AI assistant helping a student.
     turnCounter[userId] = 0;
 }
 
+function getRefusalMessage(lang) {
+    const refusalMap = {
+        English: "I can only understand and respond in English.",
+        Spanish: "Solo puedo entender y responder en español.",
+        Vietnamese: "Tôi chỉ có thể hiểu và trả lời bằng tiếng Việt.",
+        Korean: "저는 한국어로만 이해하고 응답할 수 있습니다.",
+        Hindi: "मैं केवल हिंदी में समझ और उत्तर दे सकता हूँ।",
+        "Chinese (Simplified)": "我只能用中文理解和回答。",
+        "Chinese (Traditional)": "我只能用中文理解和回答。"
+    };
+
+    return refusalMap[lang] || `I can only understand and respond in ${lang}.`;
+}
+
 app.post("/start-session", (req, res) => {
     const { userId, language, task } = req.body;
 
@@ -117,51 +131,8 @@ app.get("/chat-stream-sse", async (req, res) => {
     const message = req.query.message;
     const lang = req.query.lang || "English";
 
-    const langMap = {
-        English: "eng",
-        Vietnamese: "vie",
-        Spanish: "spa",
-        Korean: "kor",
-        Hindi: "hin",
-        "Chinese (Simplified)": "cmn",
-        "Chinese (Traditional)": "cmn"
-    };
-
-    const refusalMap = {
-        English: "I can only understand and respond in English.",
-        Spanish: "Solo puedo entender y responder en español.",
-        Vietnamese: "Tôi chỉ có thể hiểu và trả lời bằng tiếng Việt.",
-        Korean: "저는 한국어로만 이해하고 응답할 수 있습니다.",
-        Hindi: "मैं केवल हिंदी में समझ और उत्तर दे सकता हूँ।",
-        "Chinese (Simplified)": "我只能用中文理解和回答。",
-        "Chinese (Traditional)": "我只能用中文理解和回答。"
-    };
-
-
     if (!userId || !message) {
         return res.status(400).end();
-    }
-
-    // IMPORTANT: skip detection for short inputs
-    if (message.length > 20 && langMap[lang]) {
-
-        const detectedInput = franc(message);
-
-        if (detectedInput !== langMap[lang] && detectedInput !== "und") {
-
-            const refusal = refusalMap[lang];
-
-            res.setHeader("Content-Type", "text/event-stream");
-            res.setHeader("Cache-Control", "no-cache");
-            res.setHeader("Connection", "keep-alive");
-
-            res.write(`data: ${JSON.stringify({
-                done: true,
-                reply: refusal
-            })}\n\n`);
-
-            return res.end();
-        }
     }
 
     if (!conversations[userId]) {
@@ -174,13 +145,36 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     if (systemIndex !== -1) {
         convo[systemIndex].content = `
-        You are a helpful AI assistant.
+            You are a helpful AI assistant.
 
-        You must respond ONLY in ${lang}.
-        Never use any other language.
+            LANGUAGE CONSTRAINT (STRICT):
 
-        Answer normally and helpfully.
-        `;
+            You must respond ONLY in ${lang}.
+            You must NEVER output any word, character, or phrase from another language.
+
+            DETECTION RULE:
+
+            If the user's message is NOT written in ${lang},
+            you must NOT answer the question.
+
+            Instead, you must reply ONLY with the following message:
+
+            ${getRefusalMessage(lang)}
+
+            RESPONSE RULES:
+
+            - The refusal message must be the entire response.
+            - Do NOT translate the user's message.
+            - Do NOT explain anything.
+            - Do NOT add extra text.
+            - Do NOT include multiple sentences.
+            - Do NOT include any words from another language.
+
+            If the user's message IS primarily in ${lang}, then:
+            - Answer normally in ${lang}.
+            - Stay consistent with prior conversation context.
+            - Do not contradict earlier responses.
+            `;
     }
 
     let editIndex = req.query.editIndex;
@@ -233,7 +227,6 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     res.flushHeaders();
     res.write(":\n\n");
-
 
     try {
 
@@ -301,6 +294,16 @@ app.get("/chat-stream-sse", async (req, res) => {
             }
 
         }
+
+        const langMap = {
+            English: "eng",
+            Vietnamese: "vie",
+            Spanish: "spa",
+            Korean: "kor",
+            Hindi: "hin",
+            "Chinese (Simplified)": "cmn",
+            "Chinese (Traditional)": "cmn"
+        };
 
         if (langMap[lang]) {
             const detected = franc(botReply);
