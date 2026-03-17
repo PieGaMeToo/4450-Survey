@@ -135,32 +135,6 @@ app.get("/chat-stream-sse", async (req, res) => {
         return res.status(400).end();
     }
 
-    const langMap = {
-        English: "eng",
-        Spanish: "spa",
-        Vietnamese: "vie",
-        Korean: "kor",
-        Hindi: "hin",
-        "Chinese (Simplified)": "cmn",
-        "Chinese (Traditional)": "cmn"
-    };
-
-    const detectedLang = franc(message);
-
-    if (langMap[lang] && detectedLang !== langMap[lang] && detectedLang !== "und") {
-        const refusal = getRefusalMessage(lang);
-
-        res.setHeader("Content-Type", "text/event-stream");
-        res.setHeader("Cache-Control", "no-cache");
-        res.setHeader("Connection", "keep-alive");
-
-        res.flushHeaders();
-        res.write(":\n\n");
-
-        res.write(`data: ${JSON.stringify({ done: true, reply: refusal })}\n\n`);
-        return res.end();
-    }
-
     if (!conversations[userId]) {
         initializeConversation(userId);
     }
@@ -173,12 +147,11 @@ app.get("/chat-stream-sse", async (req, res) => {
         convo[systemIndex].content = `
             You are a helpful AI assistant.
 
-            LANGUAGE RULE:
-            - Respond only in ${lang}.
-            - If the user's message is NOT in ${lang}, respond only with:
-              ${getRefusalMessage(lang)}
-            - Otherwise, respond normally in ${lang}.
-            - Always respond; do not refuse unless the message is clearly in another language.
+            DETECTION RULE:
+            If the user's message is clearly not in ${lang}, respond ONLY with:
+            ${getRefusalMessage(lang)}
+            Otherwise, respond normally in ${lang}.
+
             `;
     }
 
@@ -298,6 +271,34 @@ app.get("/chat-stream-sse", async (req, res) => {
 
             }
 
+        }
+
+        const langMap = {
+            English: "eng",
+            Vietnamese: "vie",
+            Spanish: "spa",
+            Korean: "kor",
+            Hindi: "hin",
+            "Chinese (Simplified)": "cmn",
+            "Chinese (Traditional)": "cmn"
+        };
+
+        if (langMap[lang]) {
+            const detected = franc(botReply);
+
+            if (detected !== langMap[lang] && detected !== "und") {
+                const fallbackMap = {
+                    English: "I can only respond in English.",
+                    Spanish: "Solo puedo responder en español.",
+                    Vietnamese: "Tôi chỉ có thể trả lời bằng tiếng Việt.",
+                    Korean: "저는 한국어로만 응답할 수 있습니다.",
+                    Hindi: "मैं केवल हिंदी में उत्तर दे सकता हूँ।",
+                    "Chinese (Simplified)": "我只能用中文回答。",
+                    "Chinese (Traditional)": "我只能用中文回答。"
+                };
+
+                botReply = fallbackMap[lang] || `I can only respond in ${lang}.`;
+            }
         }
 
         convo.push({
