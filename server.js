@@ -47,12 +47,7 @@ function initializeConversation(userId) {
         {
             role: "system",
             content: `
-You are a helpful AI assistant helping a student build an outline.
-
-The student is completing an academic outline task.
-They must produce an outline (not a full essay).
-
-Follow all system instructions strictly.
+You are a helpful AI assistant helping a student.
 `
         }
     ];
