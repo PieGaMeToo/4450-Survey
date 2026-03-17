@@ -146,11 +146,8 @@ app.get("/chat-stream-sse", async (req, res) => {
     if (systemIndex !== -1) {
         convo[systemIndex].content = `
             You are a helpful AI assistant.
-
-            DETECTION RULE:
-            If the user's message is clearly not in ${lang}, respond ONLY with:
-            ${getRefusalMessage(lang)}
-            Otherwise, respond normally in ${lang}.
+            Only respond in ${lang}.
+            If the user speaks in a different language, politely ask them to switch to ${lang} or let them know you can only understand ${lang}.
 
             `;
     }
