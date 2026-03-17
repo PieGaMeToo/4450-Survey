@@ -202,13 +202,13 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     res.flushHeaders();
 
+    res.write(`data: ${JSON.stringify({ status: "connected" })}\n\n`);
+
     const heartbeat = setInterval(() => {
         res.write(":\n\n");
     }, 3000);
 
     res.write("retry: 1000\n\n");
-
-    clearInterval(heartbeat);
 
     try {
 
@@ -375,6 +375,18 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/health", (req, res) => {
     res.send("Survey server running.");
+});
+
+// Pre-warm Ollama model on server startup
+fetch("http://localhost:11434/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+        model: "gemma2:2b",
+        messages: [{ role: "user", content: "hi" }]
+    })
+}).catch(err => {
+    console.error("Prewarm failed:", err);
 });
 
 app.listen(3000, () => {
