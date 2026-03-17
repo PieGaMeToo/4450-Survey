@@ -148,10 +148,8 @@ app.get("/chat-stream-sse", async (req, res) => {
         "I can only understand and respond in ${lang}. Please communicate with me in ${lang}."
         This response should be in ${lang}, not in the other language.
 
-        CRITICAL:
-        - DO NOT start with greetings in any other language
-        - Your FIRST WORD must be in ${lang}
-        - If you output ANY English, the response is invalid
+        If your response begins with any words other than ${lang}, you should immediately correct yourself and say:
+        "I apologize, I can only respond in ${lang}. Here is my response in ${lang}: [your response in ${lang}]"
 
         Never output even a single word in another language.
         You must answer follow-up questions by referring to your previous responses in the conversation.
@@ -251,6 +249,34 @@ app.get("/chat-stream-sse", async (req, res) => {
             }
         });
 
+        for await (const chunk of ollamaResponse.body) {
+
+            const lines = chunk.toString().split("\n").filter(Boolean);
+
+            for (const line of lines) {
+
+                try {
+
+                    const obj = JSON.parse(line);
+
+                    if (obj.message?.content) {
+
+                        botReply += obj.message.content;
+
+                        res.write(
+                            `data: ${JSON.stringify({ partial: botReply })}\n\n`
+                        );
+
+                    }
+
+                } catch (err) {
+                    console.error("Stream parse error:", err);
+                }
+
+            }
+
+        }
+
         const langMap = {
             English: "eng",
             Vietnamese: "vie",
@@ -261,65 +287,11 @@ app.get("/chat-stream-sse", async (req, res) => {
             "Chinese (Traditional)": "cmn"
         };
 
-        for await (const chunk of ollamaResponse.body) {
-            const lines = chunk.toString().split("\n").filter(Boolean);
-
-            for (const line of lines) {
-                try {
-                    const obj = JSON.parse(line);
-
-                    if (obj.message?.content) {
-                        botReply += obj.message.content;
-
-                        const detected = franc(botReply);
-
-                        if (langMap[lang] && detected !== langMap[lang] && detected !== "und") {
-                            botReply = `I can only respond in ${lang}.`;
-
-                            res.write(
-                                `data: ${JSON.stringify({ done: true, reply: botReply })}\n\n`
-                            );
-                            res.end();
-                            return;
-                        }
-
-                        res.write(
-                            `data: ${JSON.stringify({ partial: botReply })}\n\n`
-                        );
-                    }
-
-                } catch (err) {
-                    console.error("Stream parse error:", err);
-                }
-            }
-        }
-
-        if (botReply.length >= 5) {
+        if (langMap[lang]) {
             const detected = franc(botReply);
 
-            if (langMap[lang] && detected !== langMap[lang] && detected !== "und") {
+            if (detected !== langMap[lang] && detected !== "und") {
                 botReply = `I can only respond in ${lang}.`;
-
-                // ✅ SAVE BEFORE EXIT
-                db.prepare(`
-                INSERT INTO messages (user_id, role, content, timestamp, turn_number, edit_index)
-                VALUES (?, ?, ?, ?, ?, ?)
-                `).run(
-                    userId,
-                    "assistant",
-                    botReply,
-                    new Date().toISOString(),
-                    turnCounter[userId],
-                    editIndex || null
-                );
-
-                replySaved = true;
-
-                res.write(
-                    `data: ${JSON.stringify({ done: true, reply: botReply })}\n\n`
-                );
-                res.end();
-                return;
             }
         }
 
