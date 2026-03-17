@@ -251,6 +251,16 @@ app.get("/chat-stream-sse", async (req, res) => {
             }
         });
 
+        const langMap = {
+            English: "eng",
+            Vietnamese: "vie",
+            Spanish: "spa",
+            Korean: "kor",
+            Hindi: "hin",
+            "Chinese (Simplified)": "cmn",
+            "Chinese (Traditional)": "cmn"
+        };
+
         for await (const chunk of ollamaResponse.body) {
             const lines = chunk.toString().split("\n").filter(Boolean);
 
@@ -284,21 +294,32 @@ app.get("/chat-stream-sse", async (req, res) => {
             }
         }
 
-        const langMap = {
-            English: "eng",
-            Vietnamese: "vie",
-            Spanish: "spa",
-            Korean: "kor",
-            Hindi: "hin",
-            "Chinese (Simplified)": "cmn",
-            "Chinese (Traditional)": "cmn"
-        };
-
-        if (langMap[lang]) {
+        if (botReply.length > 10) {
             const detected = franc(botReply);
 
-            if (detected !== langMap[lang] && detected !== "und") {
+            if (langMap[lang] && detected !== langMap[lang] && detected !== "und") {
                 botReply = `I can only respond in ${lang}.`;
+
+                // ✅ SAVE BEFORE EXIT
+                db.prepare(`
+                INSERT INTO messages (user_id, role, content, timestamp, turn_number, edit_index)
+                VALUES (?, ?, ?, ?, ?, ?)
+                `).run(
+                    userId,
+                    "assistant",
+                    botReply,
+                    new Date().toISOString(),
+                    turnCounter[userId],
+                    editIndex || null
+                );
+
+                replySaved = true;
+
+                res.write(
+                    `data: ${JSON.stringify({ done: true, reply: botReply })}\n\n`
+                );
+                res.end();
+                return;
             }
         }
 
