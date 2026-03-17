@@ -201,6 +201,9 @@ app.get("/chat-stream-sse", async (req, res) => {
     res.setHeader("Connection", "keep-alive");
 
     res.flushHeaders();
+
+    res.write("retry: 1000\n\n");
+
     res.write(":\n\n");
 
     try {
@@ -243,31 +246,28 @@ app.get("/chat-stream-sse", async (req, res) => {
         });
 
         for await (const chunk of ollamaResponse.body) {
-
             const lines = chunk.toString().split("\n").filter(Boolean);
 
             for (const line of lines) {
-
                 try {
-
                     const obj = JSON.parse(line);
 
-                    if (obj.message?.content) {
+                    if (obj.done) {
+                        break;
+                    }
 
+                    if (obj.message?.content) {
                         botReply += obj.message.content;
 
                         res.write(
                             `data: ${JSON.stringify({ partial: botReply })}\n\n`
                         );
-
                     }
 
                 } catch (err) {
                     console.error("Stream parse error:", err);
                 }
-
             }
-
         }
 
         const langMap = {
