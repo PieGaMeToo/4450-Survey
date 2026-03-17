@@ -147,18 +147,10 @@ app.get("/chat-stream-sse", async (req, res) => {
         convo[systemIndex].content = `
             You are a helpful AI assistant.
 
-            LANGUAGE CONSTRAINT (STRICT):
-
-            You must respond ONLY in ${lang}.
-            You must NEVER output any word, character, or phrase from another language.
-
             DETECTION RULE:
 
             If the user's message is NOT written in ${lang},
             you must NOT answer the question.
-
-            However, make sure you are confident that the user's message is not primarily in ${lang} before refusing to answer.
-            If you ever give a refusal message to a message in ${lang}, you will have failed the task
 
             Instead, you must reply ONLY with the following message:
 
