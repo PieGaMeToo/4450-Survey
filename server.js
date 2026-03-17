@@ -294,7 +294,7 @@ app.get("/chat-stream-sse", async (req, res) => {
             }
         }
 
-        if (botReply.length > 10) {
+        if (botReply.length >= 5) {
             const detected = franc(botReply);
 
             if (langMap[lang] && detected !== langMap[lang] && detected !== "und") {
