@@ -202,11 +202,18 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     res.flushHeaders();
 
+    const heartbeat = setInterval(() => {
+        res.write(":\n\n");
+    }, 3000);
+
     res.write("retry: 1000\n\n");
 
-    res.write(":\n\n");
+    clearInterval(heartbeat);
 
     try {
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 20000); // 20s
 
         const ollamaResponse = await fetch(
             "http://localhost:11434/api/chat",
@@ -216,10 +223,18 @@ app.get("/chat-stream-sse", async (req, res) => {
                 body: JSON.stringify({
                     model: "gemma2:2b",
                     messages: convo,
-                    stream: true
-                })
+                    stream: true,
+                    options: {
+                        num_predict: 150,
+                        temperature: 0.7,
+                        top_k: 40
+                    }
+                }),
+                signal: controller.signal
             }
         );
+
+        clearTimeout(timeout);
 
         let botReply = "";
         let replySaved = false;
@@ -253,7 +268,7 @@ app.get("/chat-stream-sse", async (req, res) => {
                     const obj = JSON.parse(line);
 
                     if (obj.done) {
-                        break;
+                        continue;
                     }
 
                     if (obj.message?.content) {
@@ -319,7 +334,7 @@ app.get("/chat-stream-sse", async (req, res) => {
         res.write(
             `data: ${JSON.stringify({ done: true, reply: botReply })}\n\n`
         );
-
+        clearInterval(heartbeat);
         res.end();
 
     } catch (err) {
@@ -329,7 +344,7 @@ app.get("/chat-stream-sse", async (req, res) => {
         res.write(
             `data: ${JSON.stringify({ error: "Chat failure" })}\n\n`
         );
-
+        clearInterval(heartbeat);
         res.end();
     }
 
