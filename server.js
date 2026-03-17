@@ -213,7 +213,7 @@ app.get("/chat-stream-sse", async (req, res) => {
     try {
 
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 20000); // 20s
+        const timeout = setTimeout(() => controller.abort(), 30000); // 30s
 
         const ollamaResponse = await fetch(
             "http://localhost:11434/api/chat",
@@ -225,7 +225,7 @@ app.get("/chat-stream-sse", async (req, res) => {
                     messages: convo,
                     stream: true,
                     options: {
-                        num_predict: 150,
+                        num_predict: 250, // Max characters in response
                         temperature: 0.7,
                         top_k: 40
                     }
