@@ -9,10 +9,18 @@ const app = express();
 
 app.use(express.json());
 app.use(cors({
-    origin: [
-        "https://cornell.yul1.qualtrics.com",
-        "https://www.4450survey.org"
-    ]
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+
+        if (
+            origin.endsWith(".qualtrics.com") ||
+            origin === "https://www.4450survey.org"
+        ) {
+            return callback(null, true);
+        }
+
+        return callback(new Error("Not allowed by CORS"));
+    }
 }));
 
 const db = new Database(path.join(__dirname, "survey.db"));
@@ -225,7 +233,7 @@ app.get("/chat-stream-sse", async (req, res) => {
                     messages: convo,
                     stream: true,
                     options: {
-                        num_predict: 400, // Max characters in response
+                        num_predict: 700, // Max characters in response
                         temperature: 0.7,
                         top_k: 40
                     }
