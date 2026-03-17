@@ -154,7 +154,7 @@ app.get("/chat-stream-sse", async (req, res) => {
 
             DETECTION RULE:
 
-            If the user's message is NOT primarily written in ${lang} (more than 50% of the text is another language),
+            If the user's message is NOT written in ${lang},
             you must NOT answer the question.
 
             Instead, you must reply ONLY with the following message:
