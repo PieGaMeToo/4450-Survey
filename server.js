@@ -146,7 +146,16 @@ app.get("/chat-stream-sse", async (req, res) => {
     };
 
     if (langMap[lang]) {
-        const detectedUserLang = franc(message);
+        let userText = message;
+
+        // Try to extract "User message:" portion
+        const match = message.match(/User message:\s*([\s\S]*)$/i);
+
+        if (match) {
+            userText = match[1].trim();
+        }
+
+        const detectedUserLang = franc(userText);
 
         if (detectedUserLang !== langMap[lang] && detectedUserLang !== "und") {
 
@@ -165,10 +174,6 @@ app.get("/chat-stream-sse", async (req, res) => {
 
             return res.end();
         }
-    }
-
-    if (!conversations[userId]) {
-        initializeConversation(userId);
     }
 
     const convo = conversations[userId];
@@ -394,6 +399,10 @@ app.get("/task-status", (req, res) => {
 
     if (!userId) {
         return res.json({ completedTasks: 0 });
+    }
+
+    if (!conversations[userId]) {
+        initializeConversation(userId);
     }
 
     const row = db.prepare(`
