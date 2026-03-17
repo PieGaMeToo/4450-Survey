@@ -135,6 +135,38 @@ app.get("/chat-stream-sse", async (req, res) => {
         return res.status(400).end();
     }
 
+    const langMap = {
+        English: "eng",
+        Vietnamese: "vie",
+        Spanish: "spa",
+        Korean: "kor",
+        Hindi: "hin",
+        "Chinese (Simplified)": "cmn",
+        "Chinese (Traditional)": "cmn"
+    };
+
+    if (langMap[lang]) {
+        const detectedUserLang = franc(message);
+
+        if (detectedUserLang !== langMap[lang] && detectedUserLang !== "und") {
+
+            res.setHeader("Content-Type", "text/event-stream");
+            res.setHeader("Cache-Control", "no-cache");
+            res.setHeader("Connection", "keep-alive");
+
+            res.flushHeaders();
+
+            res.write(
+                `data: ${JSON.stringify({
+                    done: true,
+                    reply: getRefusalMessage(lang)
+                })}\n\n`
+            );
+
+            return res.end();
+        }
+    }
+
     if (!conversations[userId]) {
         initializeConversation(userId);
     }
@@ -295,31 +327,27 @@ app.get("/chat-stream-sse", async (req, res) => {
 
         }
 
-        const langMap = {
-            English: "eng",
-            Vietnamese: "vie",
-            Spanish: "spa",
-            Korean: "kor",
-            Hindi: "hin",
-            "Chinese (Simplified)": "cmn",
-            "Chinese (Traditional)": "cmn"
-        };
+        if (botReply.length > 80) {
 
-        if (langMap[lang]) {
             const detected = franc(botReply);
 
-            if (detected !== langMap[lang] && detected !== "und") {
-                const fallbackMap = {
-                    English: "I can only respond in English.",
-                    Spanish: "Solo puedo responder en español.",
-                    Vietnamese: "Tôi chỉ có thể trả lời bằng tiếng Việt.",
-                    Korean: "저는 한국어로만 응답할 수 있습니다.",
-                    Hindi: "मैं केवल हिंदी में उत्तर दे सकता हूँ।",
-                    "Chinese (Simplified)": "我只能用中文回答。",
-                    "Chinese (Traditional)": "我只能用中文回答。"
-                };
+            if (detected !== langMap[lang]) {
+                if (detected === "und") {
+                    // allow it, do nothing
+                } else {
 
-                botReply = fallbackMap[lang] || `I can only respond in ${lang}.`;
+                    const fallbackMap = {
+                        English: "I can only respond in English.",
+                        Spanish: "Solo puedo responder en español.",
+                        Vietnamese: "Tôi chỉ có thể trả lời bằng tiếng Việt.",
+                        Korean: "저는 한국어로만 응답할 수 있습니다.",
+                        Hindi: "मैं केवल हिंदी में उत्तर दे सकता हूँ।",
+                        "Chinese (Simplified)": "我只能用中文回答。",
+                        "Chinese (Traditional)": "我只能用中文回答。"
+                    };
+
+                    botReply = fallbackMap[lang] || `I can only respond in ${lang}.`;
+                }
             }
         }
 
