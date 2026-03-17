@@ -146,6 +146,8 @@ app.get("/chat-stream-sse", async (req, res) => {
 
         If the user sends any message predominantly in another language, you should respond with:
         "I can only understand and respond in ${lang}. Please communicate with me in ${lang}."
+        Predominantly means more than 50% of the words are in another language.
+        An example of this would be, assuming ${lang} is Spanish: "Hello, how are usted?" This message is predominantly English, so you should respond with the above message asking them to communicate in Spanish."
         This response should be in ${lang}, not in the other language.
 
         If your response begins with any words other than ${lang}, you should immediately correct yourself and say:
