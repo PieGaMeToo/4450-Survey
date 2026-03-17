@@ -263,21 +263,27 @@ if (urlLanguage && urlTask) {
 
     const displayTask = tasks[urlTask]["English"];
 
-    const outlineInstructions = `
+    let outlineInstructions = `
     <div style="font-size: 13px; margin-top: 4px;">
         <p>Requirements:</p>
         <ul>
             <li class="RedLine">Use only your assigned language when prompting the AI and building your outline.</li>
-            <li>Focus only on generating ideas and building an outline, it must be at least 50 words.</li>
-            <li>Do not write a full essay</li>
+            <li>Focus only on generating ideas and building an outline.</li>
+            <li>Do not write a full essay, but it must be at least 50 words.</li>
             <li>You have 10 minutes.</li>
-        </ul>
+        </ul>`;
+    
+    if (urlTask !== "task_c") {
+        outlineInstructions += `
         <p>Your outline should include:</p>
         <ul>
             <li>At least 2 solutions or policies</li>
             <li>Supporting reasoning or examples for each solution</li>
             <li>Potential limitations or trade-offs of the solutions</li>
-        </ul>
+        </ul>`;
+    }
+    
+    outlineInstructions += `
         <p class="RedLine">
         Note: The AI already understands the task prompt and requirements in your assigned language.
         You do not need to repeat or paste them again when prompting the AI.
@@ -346,21 +352,27 @@ document.getElementById("toPage3").onclick = async () => {
         taskOrder = data.task_order;
 
         const displayTask = tasks[task.value][selectedLanguage];
-        const outlineInstructions = `
+        let outlineInstructions = `
         <div style="font-size: 13px; margin-top: 4px;"> 
             <p>Requirements:</p> 
             <ul> 
-                <li>Use only this language when prompting the AI and building your outline.</li> 
+                <li>Use only your assigned language when prompting the AI and building your outline.</li> 
                 <li>Focus only on generating ideas and building an outline.</li> 
                 <li>Do not write a full essay, but it must be at least 50 words.</li> 
                 <li>You have 10 minutes.</li> 
-            </ul> 
+            </ul>`;
+        
+        if (task.value !== "task_c") {
+            outlineInstructions += ` 
             <p>Your outline should include:</p> 
             <ul> 
                 <li>At least 2 solutions or policies</li> 
                 <li>Supporting reasoning or examples for each solution</li> 
                 <li>Potential limitations or trade-offs of the solutions</li> 
-            </ul> 
+            </ul>`;
+        }
+        
+        outlineInstructions += ` 
             <p class="RedLine">Note: The AI already understands the task prompt and requirements in your assigned language. You do not need to repeat or paste them again when prompting the AI.</p>
         </div>
         `;
