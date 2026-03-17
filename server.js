@@ -135,45 +135,8 @@ app.get("/chat-stream-sse", async (req, res) => {
         return res.status(400).end();
     }
 
-    const langMap = {
-        English: "eng",
-        Vietnamese: "vie",
-        Spanish: "spa",
-        Korean: "kor",
-        Hindi: "hin",
-        "Chinese (Simplified)": "cmn",
-        "Chinese (Traditional)": "cmn"
-    };
-
-    if (langMap[lang]) {
-        let userText = message;
-
-        // Try to extract "User message:" portion
-        const match = message.match(/User message:\s*([\s\S]*)$/i);
-
-        if (match) {
-            userText = match[1].trim();
-        }
-
-        const detectedUserLang = franc(userText);
-
-        if (detectedUserLang !== langMap[lang] && detectedUserLang !== "und") {
-
-            res.setHeader("Content-Type", "text/event-stream");
-            res.setHeader("Cache-Control", "no-cache");
-            res.setHeader("Connection", "keep-alive");
-
-            res.flushHeaders();
-
-            res.write(
-                `data: ${JSON.stringify({
-                    done: true,
-                    reply: getRefusalMessage(lang)
-                })}\n\n`
-            );
-
-            return res.end();
-        }
+    if (!conversations[userId]) {
+        initializeConversation(userId);
     }
 
     const convo = conversations[userId];
@@ -193,6 +156,9 @@ app.get("/chat-stream-sse", async (req, res) => {
 
             If the user's message is NOT written in ${lang},
             you must NOT answer the question.
+
+            However, make sure you are confident that the user's message is not primarily in ${lang} before refusing to answer.
+            If you ever give a refusal message to a message in ${lang}, you will have failed the task
 
             Instead, you must reply ONLY with the following message:
 
@@ -332,27 +298,31 @@ app.get("/chat-stream-sse", async (req, res) => {
 
         }
 
-        if (botReply.length > 80) {
+        const langMap = {
+            English: "eng",
+            Vietnamese: "vie",
+            Spanish: "spa",
+            Korean: "kor",
+            Hindi: "hin",
+            "Chinese (Simplified)": "cmn",
+            "Chinese (Traditional)": "cmn"
+        };
 
+        if (langMap[lang]) {
             const detected = franc(botReply);
 
-            if (detected !== langMap[lang]) {
-                if (detected === "und") {
-                    // allow it, do nothing
-                } else {
+            if (detected !== langMap[lang] && detected !== "und") {
+                const fallbackMap = {
+                    English: "I can only respond in English.",
+                    Spanish: "Solo puedo responder en español.",
+                    Vietnamese: "Tôi chỉ có thể trả lời bằng tiếng Việt.",
+                    Korean: "저는 한국어로만 응답할 수 있습니다.",
+                    Hindi: "मैं केवल हिंदी में उत्तर दे सकता हूँ।",
+                    "Chinese (Simplified)": "我只能用中文回答。",
+                    "Chinese (Traditional)": "我只能用中文回答。"
+                };
 
-                    const fallbackMap = {
-                        English: "I can only respond in English.",
-                        Spanish: "Solo puedo responder en español.",
-                        Vietnamese: "Tôi chỉ có thể trả lời bằng tiếng Việt.",
-                        Korean: "저는 한국어로만 응답할 수 있습니다.",
-                        Hindi: "मैं केवल हिंदी में उत्तर दे सकता हूँ।",
-                        "Chinese (Simplified)": "我只能用中文回答。",
-                        "Chinese (Traditional)": "我只能用中文回答。"
-                    };
-
-                    botReply = fallbackMap[lang] || `I can only respond in ${lang}.`;
-                }
+                botReply = fallbackMap[lang] || `I can only respond in ${lang}.`;
             }
         }
 
@@ -401,10 +371,6 @@ app.get("/task-status", (req, res) => {
         return res.json({ completedTasks: 0 });
     }
 
-    if (!conversations[userId]) {
-        initializeConversation(userId);
-    }
-
     const row = db.prepare(`
         SELECT COUNT(*) as count
         FROM participants
@@ -427,3 +393,4 @@ app.get("/health", (req, res) => {
 app.listen(3000, () => {
     console.log("Server running on http://localhost:3000");
 });
+
