@@ -148,27 +148,13 @@ app.get("/chat-stream-sse", async (req, res) => {
             You are a helpful AI assistant.
 
             DETECTION RULE:
-
-            If the user's message is NOT written in ${lang},
-            you must NOT answer the question.
-
-            Instead, you must reply ONLY with the following message:
-
-            ${getRefusalMessage(lang)}
+            - If the user's message is clearly not in ${lang}, respond only with:
+              ${getRefusalMessage(lang)}
+            - Otherwise, respond normally in ${lang}.
 
             RESPONSE RULES:
-
-            - The refusal message must be the entire response.
-            - Do NOT translate the user's message.
-            - Do NOT explain anything.
-            - Do NOT add extra text.
-            - Do NOT include multiple sentences.
-            - Do NOT include any words from another language.
-
-            If the user's message IS primarily in ${lang}, then:
-            - Answer normally in ${lang}.
+            - Never explain or translate the user's message.
             - Stay consistent with prior conversation context.
-            - Do not contradict earlier responses.
             `;
     }
 
