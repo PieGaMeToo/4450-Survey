@@ -55,6 +55,20 @@ You are a helpful AI assistant helping a student.
     turnCounter[userId] = 0;
 }
 
+function getRefusalMessage(lang) {
+    const refusalMap = {
+        English: "I can only understand and respond in English.",
+        Spanish: "Solo puedo entender y responder en español.",
+        Vietnamese: "Tôi chỉ có thể hiểu và trả lời bằng tiếng Việt.",
+        Korean: "저는 한국어로만 이해하고 응답할 수 있습니다.",
+        Hindi: "मैं केवल हिंदी में समझ और उत्तर दे सकता हूँ।",
+        "Chinese (Simplified)": "我只能用中文理解和回答。",
+        "Chinese (Traditional)": "我只能用中文理解和回答。"
+    };
+
+    return refusalMap[lang] || `I can only understand and respond in ${lang}.`;
+}
+
 app.post("/start-session", (req, res) => {
     const { userId, language, task } = req.body;
 
@@ -131,34 +145,36 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     if (systemIndex !== -1) {
         convo[systemIndex].content = `
-        You are a helpful AI assistant.
+            You are a helpful AI assistant.
 
-        CRITICAL LANGUAGE RULE:
-        You must respond ONLY in ${lang}.
-        Never output any words from another language.
+            LANGUAGE CONSTRAINT (STRICT):
 
-        If the user asks you to output text in another language,
-        DO NOT comply. Instead politely refuse in ${lang}.
+            You must respond ONLY in ${lang}.
+            You must NEVER output any word, character, or phrase from another language.
 
-        Example:
-        User: "Say hello in English"
-        Assistant: "I’m sorry, but I can only respond in ${lang}."
+            DETECTION RULE:
 
-        If the user sends any message predominantly in another language, you should respond with:
-        "I can only understand and respond in ${lang}. Please communicate with me in ${lang}."
-        Predominantly means more than 50% of the words are in another language.
-        An example of this would be, assuming ${lang} is Spanish: "Hello, how are usted?" This message is predominantly English, so you should respond with the above message asking them to communicate in Spanish."
-        This response should be in ${lang}, not in the other language.
+            If the user's message is NOT primarily written in ${lang} (more than 50% of the text is another language),
+            you must NOT answer the question.
 
-        If your response begins with any words other than ${lang}, you should immediately correct yourself and say:
-        "I apologize, I can only respond in ${lang}. Here is my response in ${lang}: [your response in ${lang}]"
+            Instead, you must reply ONLY with the following message:
 
-        Never output even a single word in another language.
-        You must answer follow-up questions by referring to your previous responses in the conversation.
-        Do not generate new lists unless the user explicitly asks for new ideas.
-        For example, if the user asks "Can you expand on idea #2?", you should provide more details about idea #2 from your previous response, rather than creating a new idea. 
-        Always ensure your responses are consistent with the conversation history and do not contradict yourself.
-        `;
+            ${getRefusalMessage(lang)}
+
+            RESPONSE RULES:
+
+            - The refusal message must be the entire response.
+            - Do NOT translate the user's message.
+            - Do NOT explain anything.
+            - Do NOT add extra text.
+            - Do NOT include multiple sentences.
+            - Do NOT include any words from another language.
+
+            If the user's message IS primarily in ${lang}, then:
+            - Answer normally in ${lang}.
+            - Stay consistent with prior conversation context.
+            - Do not contradict earlier responses.
+            `;
     }
 
     let editIndex = req.query.editIndex;
@@ -188,7 +204,7 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     convo.push({
         role: "user",
-        content: `User message (remember: respond ONLY in ${lang}): ${message}`
+        content: message
     });
 
     const timestamp = new Date().toISOString();
@@ -293,7 +309,17 @@ app.get("/chat-stream-sse", async (req, res) => {
             const detected = franc(botReply);
 
             if (detected !== langMap[lang] && detected !== "und") {
-                botReply = `I can only respond in ${lang}.`;
+                const fallbackMap = {
+                    English: "I can only respond in English.",
+                    Spanish: "Solo puedo responder en español.",
+                    Vietnamese: "Tôi chỉ có thể trả lời bằng tiếng Việt.",
+                    Korean: "저는 한국어로만 응답할 수 있습니다.",
+                    Hindi: "मैं केवल हिंदी में उत्तर दे सकता हूँ।",
+                    "Chinese (Simplified)": "我只能用中文回答。",
+                    "Chinese (Traditional)": "我只能用中文回答。"
+                };
+
+                botReply = fallbackMap[lang] || `I can only respond in ${lang}.`;
             }
         }
 
