@@ -131,18 +131,15 @@ app.post("/submit-draft", (req, res) => {
 
 app.get("/chat-stream-sse", async (req, res) => {
 
-    if (abortControllers[userId]) {
-        // abort previous unfinished stream
-        abortControllers[userId].abort();
-        delete abortControllers[userId];
-    }
-
     const userId = req.query.userId;
     const message = req.query.message;
     const lang = req.query.lang || "English";
 
-    if (!userId || !message) {
-        return res.status(400).end();
+    if (!userId || !message) return res.status(400).end();
+
+    if (abortControllers[userId]) {
+        abortControllers[userId].abort();
+        delete abortControllers[userId];
     }
 
     if (!conversations[userId]) {
