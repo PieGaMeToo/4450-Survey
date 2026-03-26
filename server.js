@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS messages (
 
 let conversations = {};
 let turnCounter = {};
+let abortControllers = {};
 function initializeConversation(userId) {
     conversations[userId] = [
         {
@@ -221,6 +222,8 @@ app.get("/chat-stream-sse", async (req, res) => {
     try {
 
         const controller = new AbortController();
+        abortControllers[userId] = controller;
+
         const timeout = setTimeout(() => controller.abort(), 30000); // 30s
 
         const ollamaResponse = await fetch(
@@ -353,6 +356,7 @@ app.get("/chat-stream-sse", async (req, res) => {
             `data: ${JSON.stringify({ error: "Chat failure" })}\n\n`
         );
         clearInterval(heartbeat);
+        delete abortControllers[userId];
         res.end();
     }
 
@@ -395,6 +399,15 @@ fetch("http://localhost:11434/api/chat", {
     })
 }).catch(err => {
     console.error("Prewarm failed:", err);
+});
+
+app.post("/stop-stream", (req, res) => {
+    const { userId } = req.body;
+    if (userId && abortControllers[userId]) {
+        abortControllers[userId].abort(); // abort the AI fetch
+        delete abortControllers[userId];
+    }
+    res.json({ status: "stopped" });
 });
 
 app.listen(3000, () => {
