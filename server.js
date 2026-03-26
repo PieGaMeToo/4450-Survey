@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS messages (
 let conversations = {};
 let turnCounter = {};
 let abortControllers = {};
-ffunction initializeConversation(userId, lang, draft = "") {
+function initializeConversation(userId, lang, draft = "") {
     conversations[userId] = [
         { role: "system", content: `You are a helpful AI assistant. Only respond in ${lang}.` },
         { role: "assistant", content: draft }
