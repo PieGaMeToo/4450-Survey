@@ -51,17 +51,12 @@ CREATE TABLE IF NOT EXISTS messages (
 let conversations = {};
 let turnCounter = {};
 let abortControllers = {};
-function initializeConversation(userId) {
+function initializeConversation(userId, taskPrompt, draft = "") {
     conversations[userId] = [
-        {
-            role: "system",
-            content: `
-You are a helpful AI assistant helping a student.
-`
-        }
+        { role: "system", content: taskPrompt },
+        { role: "assistant", content: draft }
     ];
-
-    turnCounter[userId] = 0;
+    conversations[userId].sentInitial = false;
 }
 
 function getRefusalMessage(lang) {
@@ -145,21 +140,35 @@ app.get("/chat-stream-sse", async (req, res) => {
     }
 
     if (!conversations[userId]) {
-        initializeConversation(userId);
+        initializeConversation(userId, `You are a helpful AI assistant. Only respond in ${lang}.`, "");
+    }
+
+    let convoForAI;
+
+    if (!conversations[userId].sentInitial) {
+        // include system prompt and a language-specific override message
+        convoForAI = [
+            ...conversations[userId],
+            { role: "system", content: `Only respond in ${lang}` }
+        ];
+        conversations[userId].sentInitial = true;
+    } else {
+        // subsequent messages: exclude the original system prompt
+        convoForAI = conversations[userId].filter(m => m.role !== "system");
     }
 
     const convo = conversations[userId];
 
-    const systemIndex = convo.findIndex(m => m.role === "system");
+    //const systemIndex = convo.findIndex(m => m.role === "system");
 
-    if (systemIndex !== -1) {
-        convo[systemIndex].content = `
-            You are a helpful AI assistant.
-            Only respond in ${lang}.
-            If the user speaks in a different language, politely ask them to switch to ${lang} or let them know you can only understand ${lang}.
+    //if (systemIndex !== -1) {
+    //    convo[systemIndex].content = `
+    //        You are a helpful AI assistant.
+    //        Only respond in ${lang}.
+    //        If the user speaks in a different language, politely ask them to switch to ${lang} or let them know you can only understand ${lang}.
 
-            `;
-    }
+    //        `;
+    //}
 
     let editIndex = req.query.editIndex;
 
@@ -184,13 +193,13 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     }
 
+    // increment turn counter
+    if (!turnCounter[userId]) turnCounter[userId] = 0;
     turnCounter[userId] += 1;
 
-    convo.push({
-        role: "user",
-        content: message
-    });
-
+    // push user message
+    conversations[userId].push({ role: "user", content: message });
+    
     const timestamp = new Date().toISOString();
 
     db.prepare(`
@@ -233,7 +242,7 @@ app.get("/chat-stream-sse", async (req, res) => {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     model: "gemma2:2b",
-                    messages: convo,
+                    messages: convoForAI,
                     stream: true,
                     options: {
                         num_predict: 700, // Max characters in response
