@@ -143,12 +143,15 @@ app.get("/chat-stream-sse", async (req, res) => {
     }
 
     if (!conversations[userId]) {
-        initializeConversation(userId, `You are a helpful AI assistant. Only respond in ${lang}.`, "");
+        initializeConversation(userId, lang);
     }
 
     let convoForAI = conversations[userId];
 
     const convo = conversations[userId];
+
+    if (!turnCounter[userId]) turnCounter[userId] = 0;
+    turnCounter[userId] += 1;
 
     //const systemIndex = convo.findIndex(m => m.role === "system");
 
@@ -173,20 +176,11 @@ app.get("/chat-stream-sse", async (req, res) => {
 
         const idx = parseInt(editIndex);
 
-        if (!isNaN(idx) && conversations[userId]) {
-
-            const convoIndex = idx + 1;
-
-            conversations[userId] =
-                conversations[userId].slice(0, convoIndex);
-
+        if (!isNaN(editIndex) && conversations[userId]) {
+            conversations[userId] = conversations[userId].slice(0, editIndex + 1);
         }
 
     }
-
-    // increment turn counter
-    if (!turnCounter[userId]) turnCounter[userId] = 0;
-    turnCounter[userId] += 1;
 
     // push user message
     conversations[userId].push({ role: "user", content: message });
@@ -250,12 +244,13 @@ app.get("/chat-stream-sse", async (req, res) => {
         let botReply = "";
         let replySaved = false;
 
+        req.removeAllListeners("close");
         req.on("close", () => {
             if (!replySaved && botReply.length > 0) {
                 try {
                     db.prepare(`
-            INSERT INTO messages (user_id, role, content, timestamp, turn_number, edit_index)
-            VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO messages (user_id, role, content, timestamp, turn_number, edit_index)
+                VALUES (?, ?, ?, ?, ?, ?)
             `).run(
                         userId,
                         "assistant",
@@ -269,6 +264,7 @@ app.get("/chat-stream-sse", async (req, res) => {
                     console.error("Failed to save partial response", e);
                 }
             }
+            clearInterval(heartbeat);  // ensure heartbeat stops on client disconnect
         });
 
         for await (const chunk of ollamaResponse.body) {
@@ -355,9 +351,12 @@ app.get("/chat-stream-sse", async (req, res) => {
         res.write(
             `data: ${JSON.stringify({ error: "Chat failure" })}\n\n`
         );
-        clearInterval(heartbeat);
-        delete abortControllers[userId];
-        res.end();
+    }
+    finally {
+        // This always runs, whether fetch succeeded or failed
+        clearInterval(heartbeat);           // stop the heartbeat pings
+        delete abortControllers[userId];    // remove the stored abort controller
+        res.end();                          // close the SSE response
     }
 
 });
