@@ -51,12 +51,12 @@ CREATE TABLE IF NOT EXISTS messages (
 let conversations = {};
 let turnCounter = {};
 let abortControllers = {};
-function initializeConversation(userId, taskPrompt, draft = "") {
+ffunction initializeConversation(userId, lang, draft = "") {
     conversations[userId] = [
-        { role: "system", content: taskPrompt },
+        { role: "system", content: `You are a helpful AI assistant. Only respond in ${lang}.` },
         { role: "assistant", content: draft }
     ];
-    conversations[userId].sentInitial = false;
+    conversations[userId].sentInitial = true; // mark as sent immediately
 }
 
 function getRefusalMessage(lang) {
@@ -131,6 +131,12 @@ app.post("/submit-draft", (req, res) => {
 
 app.get("/chat-stream-sse", async (req, res) => {
 
+    if (abortControllers[userId]) {
+        // abort previous unfinished stream
+        abortControllers[userId].abort();
+        delete abortControllers[userId];
+    }
+
     const userId = req.query.userId;
     const message = req.query.message;
     const lang = req.query.lang || "English";
@@ -143,19 +149,7 @@ app.get("/chat-stream-sse", async (req, res) => {
         initializeConversation(userId, `You are a helpful AI assistant. Only respond in ${lang}.`, "");
     }
 
-    let convoForAI;
-
-    if (!conversations[userId].sentInitial) {
-        // include system prompt and a language-specific override message
-        convoForAI = [
-            ...conversations[userId],
-            { role: "system", content: `Only respond in ${lang}` }
-        ];
-        conversations[userId].sentInitial = true;
-    } else {
-        // subsequent messages: exclude the original system prompt
-        convoForAI = conversations[userId].filter(m => m.role !== "system");
-    }
+    let convoForAI = conversations[userId];
 
     const convo = conversations[userId];
 
