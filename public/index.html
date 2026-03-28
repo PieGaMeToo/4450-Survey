@@ -73,11 +73,6 @@
 
       <div class="draft-container">
 
-        <div class="timerBox">
-          <div id="timerDisplay">10:00</div>
-          <button id="startTimerBtn">Start Timer</button>
-        </div>
-
         <p><b>Your Outline / Draft:</b></p>
 
         <textarea id="draftBox"></textarea>
@@ -478,87 +473,6 @@ draftBox.addEventListener("input", () => {
     }
 
 });
-
-aiInput.disabled = true;
-sendBtn.disabled = true;
-sendBtn.style.opacity = "0.5";
-sendBtn.style.cursor = "not-allowed";
-
-const timerDisplay = document.getElementById("timerDisplay");
-const startTimerBtn = document.getElementById("startTimerBtn");
-
-function updateTimerDisplay() {
-    const minutes = Math.floor(timeRemaining / 60);
-    const seconds = timeRemaining % 60;
-
-    timerDisplay.textContent =
-        `${minutes}:${seconds.toString().padStart(2,'0')}`;
-}
-
-startTimerBtn.onclick = () => {
-
-    if (timerStarted) return;
-
-    timerStarted = true;
-
-    startTimerBtn.disabled = true;
-    startTimerBtn.style.opacity = "0.5";
-    startTimerBtn.style.cursor = "not-allowed";
-
-    aiInput.disabled = false;
-    sendBtn.disabled = false;
-    sendBtn.style.opacity = "1";
-    sendBtn.style.cursor = "pointer";
-
-    timerInterval = setInterval(() => {
-
-        timeRemaining--;
-        updateTimerDisplay();
-
-        if (timeRemaining <= 0) {
-
-            clearInterval(timerInterval);
-
-            // stop AI if it is generating
-            if (aiGenerating && currentEventSource) {
-                currentEventSource.close();
-                currentEventSource = null;
-                aiGenerating = false;
-            }
-
-            // disable AI input
-            aiInput.disabled = true;
-            sendBtn.disabled = true;
-
-            const draft = document.getElementById("draftBox").value;
-
-            // auto submit outline
-            fetch("/submit-draft", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    userId: userId,
-                    taskOrder: taskOrder,
-                    language: selectedLanguage,
-                    task: selectedTask,
-                    draft: draft
-                })
-            }).then(() => {
-
-                page3.style.display = "none";
-                page4.style.display = "block";
-
-            }).catch(err => {
-                console.error("Auto submit failed:", err);
-                page3.style.display = "none";
-                page4.style.display = "block";
-            });
-        }
-
-    }, 1000);
-};
 
 function formatResponse(text) {
     let html = text.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
