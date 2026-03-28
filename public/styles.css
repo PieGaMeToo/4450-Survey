@@ -165,7 +165,7 @@ body {
 textarea#aiInput {
   width: 100%;
   min-height:70px;
-  padding:18px 80px 12px 12px;
+  padding:24px 80px 12px 12px;
   font-size: 14px;
   border-radius: 10px;
   box-sizing:border-box;
