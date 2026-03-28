@@ -162,16 +162,23 @@ body {
   box-sizing: border-box;
 }
 
-textarea#aiInput {
+textarea#aiInput,
+textarea#draftBox {
   width: 100%;
-  min-height:70px;
-  padding: 18px 80px 18px 12px;
+  min-height: 70px;
+  padding: 0 80px 0 12px;
   font-size: 14px;
   border-radius: 10px;
-  box-sizing:border-box;
+  box-sizing: border-box;
   border: 1px solid #d1d5db;
   resize: none;
-  line-height: 1.4;
+  line-height: 70px;
+}
+
+textarea#aiInput::placeholder,
+textarea#draftBox::placeholder {
+  color: #9ca3af;
+  line-height: 70px;
 }
 
 textarea#aiInput:focus,
