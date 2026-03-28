@@ -165,12 +165,13 @@ body {
 textarea#aiInput {
   width: 100%;
   min-height:70px;
-  padding:12px 80px 12px 12px;
+  padding: 18px 80px 18px 12px;
   font-size: 14px;
   border-radius: 10px;
   box-sizing:border-box;
   border: 1px solid #d1d5db;
   resize: none;
+  line-height: 1.4;
 }
 
 textarea#aiInput:focus,
