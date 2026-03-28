@@ -548,11 +548,6 @@ function showLoadingBubble(){
 
 function sendMessage() {
 
-    if (!timerStarted) {
-        alert("Please press Start before chatting with the AI.");
-        return;
-    }
-
     if (aiGenerating) return;
 
     const input = document.getElementById("aiInput");
