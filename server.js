@@ -155,10 +155,11 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     const convoWithLang = [
         { role: "system", content: `You are a helpful AI assistant. You must respond only in ${lang}. Do not switch languages.` },
-        ...(conversations[userId].sentInitial || !req.query.taskPrompt
-            ? []
-            : [{ role: "user", content: req.query.taskPrompt }]),
-        ...conversations[userId].filter(m => m.role === "user" || m.role === "assistant")
+        // Only add task prompt the first time
+        ...(!conversations[userId].sentInitial && req.query.taskPrompt
+            ? [{ role: "user", content: req.query.taskPrompt }]
+            : []),
+        ...conversations[userId]
     ];
 
     // Mark task prompt as sent
@@ -180,9 +181,6 @@ app.get("/chat-stream-sse", async (req, res) => {
     if (editIndex !== null && !isNaN(editIndex)) {
         conversations[userId] = conversations[userId].slice(0, editIndex + 1);
     }
-
-    // Add user message
-    conversations[userId].push({ role: "user", content: message });
 
     const timestamp = new Date().toISOString();
     db.prepare(`
