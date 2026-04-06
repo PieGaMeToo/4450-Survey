@@ -95,6 +95,8 @@ app.post("/start-session", (req, res) => {
         VALUES (?, ?, ?, ?, ?)
     `).run(userId, language, task, task_order, timestamp);
 
+    console.log(`[AI Start] Responding in language: ${lang}`);
+
     res.json({ status: "ok", task_order });
 });
 
@@ -240,6 +242,7 @@ app.get("/chat-stream-sse", async (req, res) => {
             INSERT INTO messages (user_id, role, content, timestamp, turn_number, edit_index)
             VALUES (?, ?, ?, ?, ?, ?)
         `).run(userId, "assistant", botReply, new Date().toISOString(), turnCounter[userId], editIndex || null);
+
         replySaved = true;
 
         res.write(`data: ${JSON.stringify({ done: true, reply: botReply })}\n\n`);
