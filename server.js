@@ -151,17 +151,14 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     // Before sending to Ollama
     const lastAssistant = conversations[userId].slice().reverse().find(m => m.role === "assistant");
+    conversations[userId].push({ role: "user", content: message });
+
     const convoWithLang = [
-        {
-            role: "system",
-            content: `You are a helpful AI assistant. You must respond only in ${lang}. Do not switch languages.`
-        },
-        // Add task prompt only on first message
+        { role: "system", content: `You are a helpful AI assistant. You must respond only in ${lang}. Do not switch languages.` },
         ...(conversations[userId].sentInitial || !req.query.taskPrompt
             ? []
-            : [{ role: "user", content: req.query.taskPrompt }])
-        ,
-        ...conversations[userId].filter(m => m.role === "user")
+            : [{ role: "user", content: req.query.taskPrompt }]),
+        ...conversations[userId].filter(m => m.role === "user" || m.role === "assistant")
     ];
 
     // Mark task prompt as sent
