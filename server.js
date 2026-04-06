@@ -178,6 +178,8 @@ app.get("/chat-stream-sse", async (req, res) => {
     res.write(`data: ${JSON.stringify({ status: "connected" })}\n\n`);
     res.write("retry: 1000\n\n");
 
+    res.write(`data: ${JSON.stringify({ aiLanguage: lang })}\n\n`);
+
     const heartbeat = setInterval(() => res.write(":\n\n"), 3000);
 
     const controller = new AbortController();

@@ -624,7 +624,11 @@ function sendMessage() {
     const evtSource = currentEventSource;
 
     evtSource.onmessage = (e) => {
-  const data = JSON.parse(e.data);
+    const data = JSON.parse(e.data);
+
+    if (data.aiLanguage) {
+        console.log("AI is responding in language:", data.aiLanguage);
+    }
 
       if (data.partial) {
         const loader = chatBox.querySelector(".aiLoading");
