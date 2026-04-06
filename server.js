@@ -164,9 +164,6 @@ app.get("/chat-stream-sse", async (req, res) => {
         conversations[userId].sentInitial = true;
     }
 
-    // Mark task prompt as sent
-    conversations[userId].sentInitial = true;
-
     if (!turnCounter[userId]) turnCounter[userId] = 0;
     turnCounter[userId] += 1;
 
