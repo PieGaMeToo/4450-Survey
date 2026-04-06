@@ -56,7 +56,7 @@ function initializeConversation(userId, lang, draft = "") {
         { role: "system", content: `You are a helpful AI assistant. Only respond in ${lang}.` },
         { role: "assistant", content: draft }
     ];
-    conversations[userId].sentInitial = true;
+    conversations[userId].sentInitial = false;
     console.log(`[AI Init] Responding in language: ${lang}`);
 }
 
@@ -154,10 +154,20 @@ app.get("/chat-stream-sse", async (req, res) => {
     const convoWithLang = [
         {
             role: "system",
-            content: `You are a helpful AI assistant. You must respond only in ${lang}. Do not switch languages. If asked to expand a previous idea, refer back to it explicitly.`
+            content: `You are a helpful AI assistant. You must respond only in ${lang}. Do not switch languages.`
         },
+        // Add task prompt only on first message
+        ...(conversations[userId].sentInitial || !req.query.taskPrompt
+            ? []
+            : [{ role: "user", content: req.query.taskPrompt }])
+        ,
         ...conversations[userId].filter(m => m.role === "user")
     ];
+
+    // Mark task prompt as sent
+    if (!conversations[userId].sentInitial && req.query.taskPrompt) {
+        conversations[userId].sentInitial = true;
+    }
 
     // Append the last assistant message as context if expansion requested
     if (message.toLowerCase().includes("expand") && lastAssistant) {
