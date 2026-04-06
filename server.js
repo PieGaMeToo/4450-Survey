@@ -167,7 +167,7 @@ app.get("/chat-stream-sse", async (req, res) => {
     }
 
     // Append the last assistant message as context if expansion requested
-    if (message.toLowerCase().includes("expand") && lastAssistant) {
+    if (lastAssistant) {
         convoWithLang.push({ role: "assistant", content: lastAssistant.content });
     }
 
