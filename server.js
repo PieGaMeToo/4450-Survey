@@ -149,13 +149,13 @@ app.get("/chat-stream-sse", async (req, res) => {
         initializeConversation(userId, lang);
     }
 
-    // Before sending to Ollama
-    const lastAssistant = conversations[userId].slice().reverse().find(m => m.role === "assistant");
+    // Only push the user message once
     conversations[userId].push({ role: "user", content: message });
 
+    // Build convo for AI
     const convoWithLang = [
         { role: "system", content: `You are a helpful AI assistant. You must respond only in ${lang}. Do not switch languages.` },
-        // Only add task prompt the first time
+        // Only add task prompt ONCE
         ...(!conversations[userId].sentInitial && req.query.taskPrompt
             ? [{ role: "user", content: req.query.taskPrompt }]
             : []),
@@ -163,14 +163,7 @@ app.get("/chat-stream-sse", async (req, res) => {
     ];
 
     // Mark task prompt as sent
-    if (!conversations[userId].sentInitial && req.query.taskPrompt) {
-        conversations[userId].sentInitial = true;
-    }
-
-    // Append the last assistant message as context if expansion requested
-    if (lastAssistant) {
-        convoWithLang.push({ role: "assistant", content: lastAssistant.content });
-    }
+    conversations[userId].sentInitial = true;
 
     if (!turnCounter[userId]) turnCounter[userId] = 0;
     turnCounter[userId] += 1;
@@ -264,7 +257,7 @@ app.get("/chat-stream-sse", async (req, res) => {
             }
         }
 
-        convo.push({ role: "assistant", content: botReply });
+        conversations[userId].push({ role: "assistant", content: botReply });
         console.log(`[AI Response] Language: ${lang}`);
 
         db.prepare(`
