@@ -158,10 +158,12 @@ app.get("/chat-stream-sse", async (req, res) => {
         ...conversations[userId] // user + assistant messages only
     ];
 
+    const taskPrompt = req.query.taskPrompt || "";
+
     if (!conversations[userId].sentInitial) {
         convoWithLang.unshift({ role: "user", content: taskPrompt });
         conversations[userId].sentInitial = true;
-    }
+    }   
 
     if (!turnCounter[userId]) turnCounter[userId] = 0;
     turnCounter[userId] += 1;
@@ -189,7 +191,6 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     res.write(`data: ${JSON.stringify({ aiLanguage: lang })}\n\n`);
 
-    const taskPrompt = req.query.taskPrompt || "";
     const aiContext = conversations[userId]
         .map(m => `[${m.role.toUpperCase()}]: ${m.content}`)
         .join("\n");
