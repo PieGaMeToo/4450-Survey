@@ -347,7 +347,7 @@ document.getElementById("toPage3").onclick = async () => {
         if (!response.ok) {
             const errData = await response.json();
             alert(errData.error || "Unable to start session. You may have already completed both tasks.");
-            return; // stop here
+            return;
         }
 
         const data = await response.json();
@@ -385,6 +385,9 @@ document.getElementById("toPage3").onclick = async () => {
 
         page2.style.display = "none";
         page3.style.display = "block";
+
+        // ✅ Trigger the first AI message automatically
+        sendMessage();
 
     } catch (err) {
         console.error("Failed to start session:", err);
