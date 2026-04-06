@@ -557,105 +557,77 @@ function sendMessage() {
 
     if (!message && editingIndex === null) return;
 
-
     if (editingIndex !== null) {
-
-      const messages = Array.from(chatBox.children);
-
-      let deleteMode = false;
-
-      messages.forEach(msg => {
-
-        const idx = parseInt(msg.dataset.index);
-
-        if (idx === editingIndex) {
-            deleteMode = true;
-        }
-
-        if (deleteMode) {
-            msg.remove();
-        }
-
-      });
-
+        const messages = Array.from(chatBox.children);
+        let deleteMode = false;
+        messages.forEach(msg => {
+            const idx = parseInt(msg.dataset.index);
+            if (idx === editingIndex) deleteMode = true;
+            if (deleteMode) msg.remove();
+        });
     }
 
     aiGenerating = true;
-
     sendIcon.querySelector("path").setAttribute("d", stopPath);
     sendBtn.disabled = false;
 
     const draftContent = document.getElementById("draftBox").value.trim();
     const taskPrompt = tasks[selectedTask][selectedLanguage];
 
-    let fullMessage =
-    `Task prompt:
-    ${taskPrompt}
-
-    User message:
-    ${message}`;
+    // ✅ Only prepend task prompt if this is the first message
+    let fullMessage;
+    if (!localStorage.getItem(`${userId}-sentFirst`)) {
+        fullMessage = `Task prompt:\n${taskPrompt}\n\nUser message:\n${message}`;
+        localStorage.setItem(`${userId}-sentFirst`, "true");
+    } else {
+        fullMessage = message;
+    }
 
     if (draftContent) {
         fullMessage += `\n\nCurrent Draft:\n${draftContent}`;
     }
 
-    let messageIndex;
+    let messageIndex = editingIndex !== null ? editingIndex : chatBox.children.length;
 
-    if(editingIndex !== null){
-        messageIndex = editingIndex;
-    }else{
-        messageIndex = chatBox.children.length;
-    }
-
-    if (!isRegenerating) { 
-        addMessage(message, "user", messageIndex ?? chatBox.children.length); 
-    }
+    if (!isRegenerating) addMessage(message, "user", messageIndex);
 
     showLoadingBubble();
-
     input.value = "";
 
     let lang = selectedLanguage;
-
     streamFinished = false;
 
     const editParam = editingIndex !== null ? `&editIndex=${editingIndex}` : "";
 
+    // ✅ Send the full message (with task prompt if first message)
     currentEventSource = new EventSource(
-    `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(message)}&lang=${encodeURIComponent(lang)}`
+        `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(fullMessage)}&lang=${encodeURIComponent(lang)}${editParam}`
     );
+
     const evtSource = currentEventSource;
 
     evtSource.onmessage = (e) => {
-    const data = JSON.parse(e.data);
+        const data = JSON.parse(e.data);
 
-    if (data.aiLanguage) {
-        console.log("AI is responding in language:", data.aiLanguage);
-    }
+        if (data.aiLanguage) {
+            console.log("AI is responding in language:", data.aiLanguage);
+        }
 
-    if (data.type === "context") {
-        console.log("AI context/prompt:", data.context);
-        return;
-    }
-
-      if (data.partial) {
-        const loader = chatBox.querySelector(".aiLoading");
-        if (loader) loader.remove();
+        if (data.type === "context") {
+            console.log("AI context/prompt:", data.context);
+            return;
+        }
 
         if (data.partial) {
-
-            const shouldScroll = isAtBottom();
-
             const loader = chatBox.querySelector(".aiLoading");
             if (loader) loader.remove();
 
+            const shouldScroll = isAtBottom();
+
             if (!chatBox.lastChild || !chatBox.lastChild.classList.contains("ai")) {
-
-                const messageIndex = chatBox.children.length;
-
                 const msgDiv = document.createElement("div");
                 msgDiv.className = "chat-message ai";
-                msgDiv.dataset.index = messageIndex;
+                msgDiv.dataset.index = chatBox.children.length;
 
                 const textDiv = document.createElement("div");
                 textDiv.className = "aiText";
@@ -671,80 +643,57 @@ function sendMessage() {
 
                 chatBox.appendChild(msgDiv);
 
-            } 
-            else {
-
+            } else {
                 const textDiv = chatBox.lastChild.querySelector(".aiText");
-
-                if (textDiv) {
-                    textDiv.innerHTML = formatResponse(data.partial);
-                }
-
+                if (textDiv) textDiv.innerHTML = formatResponse(data.partial);
             }
 
-            if (shouldScroll) {
-                chatBox.scrollTop = chatBox.scrollHeight;
+            if (shouldScroll) chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        if (data.done) {
+            const loader = chatBox.querySelector(".aiLoading");
+            if (loader) loader.remove();
+
+            streamFinished = true;
+
+            if (!chatBox.lastChild.classList.contains("ai")) {
+                addMessage(data.reply, "ai", chatBox.children.length);
             }
 
+            aiGenerating = false;
+            sendIcon.querySelector("path").setAttribute("d", arrowPath);
+            sendBtn.disabled = false;
+            currentEventSource = null;
+            evtSource.close();
         }
 
-      }
+        if (data.error) {
+            const loader = chatBox.querySelector(".aiLoading");
+            if (loader) loader.remove();
 
-      if (data.done) {
-
-        const loader = chatBox.querySelector(".aiLoading");
-        if (loader) loader.remove();
-
-        streamFinished = true;
-
-        if (!chatBox.lastChild.classList.contains("ai")) {
-            const messageIndex = chatBox.children.length;
-            addMessage(data.reply, "ai", messageIndex);
+            streamFinished = true;
+            aiGenerating = false;
+            sendIcon.querySelector("path").setAttribute("d", arrowPath);
+            sendBtn.disabled = false;
+            currentEventSource = null;
+            evtSource.close();
         }
-
-        aiGenerating = false;
-
-        sendIcon.querySelector("path").setAttribute("d", arrowPath);
-        sendBtn.disabled = false;
-
-        currentEventSource = null;
-
-        evtSource.close();
-      }
-
-      if (data.error) {
-        const loader = chatBox.querySelector(".aiLoading");
-        if (loader) loader.remove();
-
-        streamFinished = true;
-
-        aiGenerating = false;
-
-        sendIcon.querySelector("path").setAttribute("d", arrowPath);
-        sendBtn.disabled = false;
-
-        currentEventSource = null;
-
-        evtSource.close();
-      }
     };
 
     evtSource.onerror = () => {
-
-      if (!streamFinished) {
-          console.error("Unexpected SSE disconnect");
-          addMessage("[Error]", "ai");
-      }
-
+        if (!streamFinished) {
+            console.error("Unexpected SSE disconnect");
+            addMessage("[Error]", "ai");
+        }
     };
 
     editingIndex = null;
 
     const cancelBtn = document.getElementById("cancelEditBtn");
-    if(cancelBtn) cancelBtn.remove();
+    if (cancelBtn) cancelBtn.remove();
 
     document.getElementById("aiInput").style.background = "white";
-
     isRegenerating = false;
 }
 
