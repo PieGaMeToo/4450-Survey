@@ -138,17 +138,17 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     if (!userId || !message) return res.status(400).end();
 
-    // Abort previous fetch if it exists
+    // Abort previous fetch safely
     if (abortControllers[userId]) {
         abortControllers[userId].abort();
-        delete abortControllers[userId];
     }
 
+    // Initialize conversation if needed
     if (!conversations[userId]) {
-        initializeConversation(userId, lang);
+        conversations[userId] = [
+            { role: "system", content: `You are a helpful AI assistant. Only respond in ${lang}.` }
+        ];
     }
-
-    const convo = conversations[userId];
 
     if (!turnCounter[userId]) turnCounter[userId] = 0;
     turnCounter[userId] += 1;
@@ -156,20 +156,20 @@ app.get("/chat-stream-sse", async (req, res) => {
     let editIndex = req.query.editIndex;
     editIndex = (editIndex === "" || editIndex === undefined || editIndex === "null") ? null : parseInt(editIndex);
 
+    // Trim conversation if editing
     if (editIndex !== null && !isNaN(editIndex)) {
         conversations[userId] = conversations[userId].slice(0, editIndex + 1);
     }
 
-    // Add user message
-    conversations[userId].push({ role: "user", content: message });
-
+    // Add user message to conversation and DB
     const timestamp = new Date().toISOString();
+    conversations[userId].push({ role: "user", content: message });
     db.prepare(`
         INSERT INTO messages (user_id, role, content, timestamp, turn_number, edit_index)
         VALUES (?, ?, ?, ?, ?, ?)
     `).run(userId, "user", message, timestamp, turnCounter[userId], editIndex || null);
 
-    // SSE setup
+    // SSE headers
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
@@ -203,25 +203,33 @@ app.get("/chat-stream-sse", async (req, res) => {
     });
 
     try {
-        const timeout = setTimeout(() => controller.abort(), 30000);
+        const timeout = setTimeout(() => {
+            controller.abort();
+            console.error("Ollama fetch timeout");
+        }, 30000);
 
         const ollamaResponse = await fetch("http://localhost:11434/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 model: "gemma2:2b",
-                messages: convo,
+                messages: conversations[userId],
                 stream: true,
                 options: { num_predict: 700, temperature: 0.7, top_k: 40 }
             }),
             signal: controller.signal
         });
 
-        clearTimeout(timeout);
+        if (!ollamaResponse.ok) {
+            throw new Error(`Ollama fetch failed: ${ollamaResponse.status}`);
+        }
 
+        let buffer = "";
         for await (const chunk of ollamaResponse.body) {
-            const lines = chunk.toString().split("\n").filter(Boolean);
-            for (const line of lines) {
+            buffer += chunk.toString();
+            const lines = buffer.split("\n");
+            buffer = lines.pop(); // keep incomplete line
+            for (const line of lines.filter(Boolean)) {
                 try {
                     const obj = JSON.parse(line);
                     if (obj.done) continue;
@@ -235,8 +243,11 @@ app.get("/chat-stream-sse", async (req, res) => {
             }
         }
 
-        convo.push({ role: "assistant", content: botReply });
-        console.log(`[AI Response] Language: ${lang}`);
+        // Add bot reply to conversation (keep last 3 turns only)
+        conversations[userId].push({ role: "assistant", content: botReply });
+        const systemMsg = conversations[userId][0];
+        const recentTurns = conversations[userId].slice(-6); // 3 user + 3 assistant
+        conversations[userId] = [systemMsg, ...recentTurns];
 
         db.prepare(`
             INSERT INTO messages (user_id, role, content, timestamp, turn_number, edit_index)
@@ -244,13 +255,13 @@ app.get("/chat-stream-sse", async (req, res) => {
         `).run(userId, "assistant", botReply, new Date().toISOString(), turnCounter[userId], editIndex || null);
 
         replySaved = true;
-
         res.write(`data: ${JSON.stringify({ done: true, reply: botReply })}\n\n`);
 
     } catch (err) {
         console.error("Chat error:", err);
         res.write(`data: ${JSON.stringify({ error: "Chat failure" })}\n\n`);
     } finally {
+        clearTimeout(timeout);
         clearInterval(heartbeat);
         delete abortControllers[userId];
         res.end();
