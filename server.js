@@ -234,6 +234,7 @@ app.get("/chat-stream-sse", async (req, res) => {
         }
 
         convo.push({ role: "assistant", content: botReply });
+        console.log(`[AI Response] Language: ${lang}`);
 
         db.prepare(`
             INSERT INTO messages (user_id, role, content, timestamp, turn_number, edit_index)
