@@ -169,6 +169,34 @@ app.get("/chat-stream-sse", async (req, res) => {
         VALUES (?, ?, ?, ?, ?, ?)
     `).run(userId, "user", message, timestamp, turnCounter[userId], editIndex || null);
 
+    // --------- LANGUAGE ENFORCEMENT ---------
+    const detectedLang = franc(message);
+    // franc returns ISO 639-3 code; map some codes to English/Spanish etc.
+    const langMap = {
+        eng: "English",
+        spa: "Spanish",
+        vie: "Vietnamese",
+        kor: "Korean",
+        hin: "Hindi",
+        cmn: "Chinese (Simplified)",
+        zho: "Chinese (Traditional)"
+    };
+
+    const detectedLangName = langMap[detectedLang] || "Unknown";
+
+    if (detectedLangName !== lang) {
+        const refusal = getRefusalMessage(lang);
+
+        // Send refusal immediately via SSE and end stream
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+        res.flushHeaders();
+        res.write(`data: ${JSON.stringify({ done: true, reply: refusal })}\n\n`);
+        return;
+    }
+    // ----------------------------------------
+
     // SSE setup
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
