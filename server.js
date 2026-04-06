@@ -149,7 +149,10 @@ app.get("/chat-stream-sse", async (req, res) => {
         initializeConversation(userId, lang);
     }
 
-    const convo = conversations[userId];
+    const convoWithLang = [
+        { role: "system", content: `You are a helpful AI assistant. You must respond only in ${lang}. Do not switch languages under any circumstances.` },
+        ...conversations[userId].filter(m => m.role !== "system") // keep rest of history
+    ];
 
     if (!turnCounter[userId]) turnCounter[userId] = 0;
     turnCounter[userId] += 1;
@@ -213,7 +216,7 @@ app.get("/chat-stream-sse", async (req, res) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 model: "gemma2:2b",
-                messages: convo,
+                messages: convoWithLang,
                 stream: true,
                 options: { num_predict: 700, temperature: 0.7, top_k: 40 }
             }),
