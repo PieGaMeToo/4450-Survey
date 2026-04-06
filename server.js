@@ -144,7 +144,6 @@ app.get("/chat-stream-sse", async (req, res) => {
         delete abortControllers[userId];
     }
 
-    // Initialize conversation if needed
     if (!conversations[userId]) {
         initializeConversation(userId, lang);
     }
@@ -155,9 +154,7 @@ app.get("/chat-stream-sse", async (req, res) => {
     turnCounter[userId] += 1;
 
     let editIndex = req.query.editIndex;
-    editIndex = (editIndex === "" || editIndex === undefined || editIndex === "null")
-        ? null
-        : parseInt(editIndex);
+    editIndex = (editIndex === "" || editIndex === undefined || editIndex === "null") ? null : parseInt(editIndex);
 
     if (editIndex !== null && !isNaN(editIndex)) {
         conversations[userId] = conversations[userId].slice(0, editIndex + 1);
@@ -165,13 +162,14 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     // Add user message
     conversations[userId].push({ role: "user", content: message });
+
     const timestamp = new Date().toISOString();
     db.prepare(`
         INSERT INTO messages (user_id, role, content, timestamp, turn_number, edit_index)
         VALUES (?, ?, ?, ?, ?, ?)
     `).run(userId, "user", message, timestamp, turnCounter[userId], editIndex || null);
 
-    // --------- SSE HEADERS ---------
+    // SSE setup
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
@@ -180,27 +178,6 @@ app.get("/chat-stream-sse", async (req, res) => {
     res.write("retry: 1000\n\n");
 
     const heartbeat = setInterval(() => res.write(":\n\n"), 3000);
-
-    // --------- LANGUAGE ENFORCEMENT ---------
-    const detectedLang = franc(message);
-    const langMap = {
-        eng: "English",
-        spa: "Spanish",
-        vie: "Vietnamese",
-        kor: "Korean",
-        hin: "Hindi",
-        cmn: "Chinese (Simplified)",
-        zho: "Chinese (Traditional)"
-    };
-    const detectedLangName = langMap[detectedLang] || "Unknown";
-
-    if (detectedLangName !== lang) {
-        const refusal = getRefusalMessage(lang);
-        res.write(`data: ${JSON.stringify({ done: true, reply: refusal })}\n\n`);
-        clearInterval(heartbeat);
-        return res.end(); // stop stream immediately
-    }
-    // ----------------------------------------
 
     const controller = new AbortController();
     abortControllers[userId] = controller;
@@ -267,6 +244,7 @@ app.get("/chat-stream-sse", async (req, res) => {
         `).run(userId, "assistant", botReply, new Date().toISOString(), turnCounter[userId], editIndex || null);
 
         replySaved = true;
+
         res.write(`data: ${JSON.stringify({ done: true, reply: botReply })}\n\n`);
 
     } catch (err) {
