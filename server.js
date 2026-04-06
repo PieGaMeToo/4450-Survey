@@ -56,7 +56,8 @@ function initializeConversation(userId, lang, draft = "") {
         { role: "system", content: `You are a helpful AI assistant. Only respond in ${lang}.` },
         { role: "assistant", content: draft }
     ];
-    conversations[userId].sentInitial = true; // mark as sent immediately
+    conversations[userId].sentInitial = true;
+    console.log(`[AI Init] Responding in language: ${lang}`);
 }
 
 function getRefusalMessage(lang) {
