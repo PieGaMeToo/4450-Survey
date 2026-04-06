@@ -153,14 +153,16 @@ app.get("/chat-stream-sse", async (req, res) => {
     conversations[userId].push({ role: "user", content: message });
 
     // Build convo for AI
-    const convoWithLang = [
+    let convoWithLang = [
         { role: "system", content: `You are a helpful AI assistant. You must respond only in ${lang}. Do not switch languages.` },
-        // Only add task prompt ONCE
-        ...(!conversations[userId].sentInitial && req.query.taskPrompt
-            ? [{ role: "user", content: req.query.taskPrompt }]
-            : []),
-        ...conversations[userId]
+        ...conversations[userId] // user + assistant messages only
     ];
+
+    // Only add task prompt if this is the first user message
+    if (!conversations[userId].sentInitial && req.query.taskPrompt) {
+        convoWithLang.push({ role: "user", content: req.query.taskPrompt });
+        conversations[userId].sentInitial = true;
+    }
 
     // Mark task prompt as sent
     conversations[userId].sentInitial = true;
