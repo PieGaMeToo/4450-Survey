@@ -160,7 +160,7 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     // Only add task prompt if this is the first user message
     if (!conversations[userId].sentInitial && req.query.taskPrompt) {
-        convoWithLang.push({ role: "user", content: req.query.taskPrompt });
+        // convoWithLang.push({ role: "user", content: req.query.taskPrompt });
         conversations[userId].sentInitial = true;
     }
 
