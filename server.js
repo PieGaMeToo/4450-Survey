@@ -95,7 +95,7 @@ app.post("/start-session", (req, res) => {
         VALUES (?, ?, ?, ?, ?)
     `).run(userId, language, task, task_order, timestamp);
 
-    console.log(`[AI Start] Responding in language: ${lang}`);
+    console.log(`[AI Start] Responding in language: ${language}`);
 
     res.json({ status: "ok", task_order });
 });
