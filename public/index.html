@@ -630,6 +630,11 @@ function sendMessage() {
         console.log("AI is responding in language:", data.aiLanguage);
     }
 
+    if (data.type === "context") {
+        console.log("AI context/prompt:", data.context);
+        return;
+    }
+
       if (data.partial) {
         const loader = chatBox.querySelector(".aiLoading");
         if (loader) loader.remove();

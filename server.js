@@ -149,6 +149,14 @@ app.get("/chat-stream-sse", async (req, res) => {
         initializeConversation(userId, lang);
     }
 
+    const taskPrompt = req.query.taskPrompt || "";
+    const aiContext = conversations[userId]
+        .map(m => `[${m.role.toUpperCase()}]: ${m.content}`)
+        .join("\n");
+
+    // Send context to frontend
+    res.write(`data: ${JSON.stringify({ context: aiContext, type: "context" })}\n\n`);
+
     // Before sending to Ollama
     const lastAssistant = conversations[userId].slice().reverse().find(m => m.role === "assistant");
     conversations[userId].push({ role: "user", content: message });
