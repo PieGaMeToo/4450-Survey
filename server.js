@@ -149,10 +149,20 @@ app.get("/chat-stream-sse", async (req, res) => {
         initializeConversation(userId, lang);
     }
 
+    // Before sending to Ollama
+    const lastAssistant = conversations[userId].slice().reverse().find(m => m.role === "assistant");
     const convoWithLang = [
-        { role: "system", content: `You are a helpful AI assistant. You must respond only in ${lang}. Do not switch languages under any circumstances.` },
-        ...conversations[userId].filter(m => m.role !== "system") // keep rest of history
+        {
+            role: "system",
+            content: `You are a helpful AI assistant. You must respond only in ${lang}. Do not switch languages. If asked to expand a previous idea, refer back to it explicitly.`
+        },
+        ...conversations[userId].filter(m => m.role === "user")
     ];
+
+    // Append the last assistant message as context if expansion requested
+    if (message.toLowerCase().includes("expand") && lastAssistant) {
+        convoWithLang.push({ role: "assistant", content: lastAssistant.content });
+    }
 
     if (!turnCounter[userId]) turnCounter[userId] = 0;
     turnCounter[userId] += 1;
