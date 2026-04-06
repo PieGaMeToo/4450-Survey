@@ -619,7 +619,7 @@ function sendMessage() {
     const editParam = editingIndex !== null ? `&editIndex=${editingIndex}` : "";
 
     currentEventSource = new EventSource(
-        `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(fullMessage)}&lang=${encodeURIComponent(lang)}${editParam}`
+    `/chat-stream-sse?userId=${userId}&message=${encodeURIComponent(message)}&lang=${encodeURIComponent(lang)}`
     );
     const evtSource = currentEventSource;
 
