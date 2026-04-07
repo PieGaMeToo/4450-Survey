@@ -354,6 +354,9 @@ document.getElementById("toPage3").onclick = async () => {
         console.log("Assigned task order:", data.task_order);
         taskOrder = data.task_order;
 
+        const sessionKey = `${userId}-${selectedTask}-${selectedLanguage}`;
+        localStorage.removeItem(`${sessionKey}-sentFirst`);
+
         const displayTask = tasks[task.value][selectedLanguage];
         let outlineInstructions = `
         <div style="font-size: 13px; margin-top: 4px;"> 
