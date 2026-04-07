@@ -386,7 +386,7 @@ document.getElementById("toPage3").onclick = async () => {
         page2.style.display = "none";
         page3.style.display = "block";
 
-        // ✅ Trigger the first AI message automatically
+        // Trigger the first AI message automatically
         sendMessage();
 
     } catch (err) {
@@ -575,10 +575,12 @@ function sendMessage() {
     const taskPrompt = tasks[selectedTask][selectedLanguage];
 
     // ✅ Only prepend task prompt if this is the first message
+    const sessionKey = `${userId}-${selectedTask}-${selectedLanguage}`;
+
     let fullMessage;
-    if (!localStorage.getItem(`${userId}-sentFirst`)) {
+    if (!localStorage.getItem(`${sessionKey}-sentFirst`)) {
         fullMessage = `Task prompt:\n${taskPrompt}\n\nUser message:\n${message}`;
-        localStorage.setItem(`${userId}-sentFirst`, "true");
+        localStorage.setItem(`${sessionKey}-sentFirst`, "true");
     } else {
         fullMessage = message;
     }
