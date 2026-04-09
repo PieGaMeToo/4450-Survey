@@ -98,7 +98,7 @@
     Please close this tab and <strong>return to the Qualtrics survey</strong> to continue the study.
     </p>
 
-    <p><em>The survey will have auto-advanced to the next question upon closure of this tab</em></p>
+    <p><em>This tab will auto-close in <span id="countdown">5</span> seconds.</em></p>
   </div>
 
 </div>
@@ -432,6 +432,17 @@ document.getElementById("submitDraftBtn").onclick = async () => {
         // ONLY transition to page 4 AFTER backend confirms completion
         page3.style.display = "none";
         page4.style.display = "block";
+
+        let countdown = 5;
+        const countdownEl = document.getElementById("countdown");
+        const countdownInterval = setInterval(() => {
+            countdown--;
+            if (countdownEl) countdownEl.textContent = countdown;
+            if (countdown <= 0) {
+                clearInterval(countdownInterval);
+                window.close();
+            }
+        }, 1000);
 
         // Optional: ping server again to guarantee state sync
         fetch(`/task-status?userId=${userId}`)
