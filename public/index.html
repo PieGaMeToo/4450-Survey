@@ -410,22 +410,37 @@ document.getElementById("submitDraftBtn").onclick = async () => {
 
     const draft = document.getElementById("draftBox").value;
 
-    await fetch("/submit-draft", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            userId: userId,
-            taskOrder: taskOrder,
-            language: selectedLanguage,
-            task: selectedTask,
-            draft: draft
-        })
-    });
+    try {
+        const res = await fetch("/submit-draft", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                userId: userId,
+                taskOrder: taskOrder,
+                language: selectedLanguage,
+                task: selectedTask,
+                draft: draft
+            })
+        });
 
-    page3.style.display = "none";
-    page4.style.display = "block";
+        if (!res.ok) {
+            throw new Error("Failed to submit draft");
+        }
+
+        // ONLY transition to page 4 AFTER backend confirms completion
+        page3.style.display = "none";
+        page4.style.display = "block";
+
+        // Optional: ping server again to guarantee state sync
+        fetch(`/task-status?userId=${userId}`)
+            .then(() => console.log("Completion confirmed"));
+
+    } catch (err) {
+        console.error("Submit failed:", err);
+        alert("Submission failed. Please try again.");
+    }
 };
 
 
