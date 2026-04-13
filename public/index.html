@@ -469,12 +469,17 @@ submitBtn.disabled = true;
 submitBtn.style.opacity = "0.5";
 submitBtn.style.cursor = "not-allowed";
 
-function countWords(text) {
-    return text
-        .trim()
-        .split(/\s+/)
-        .filter(word => word.length > 0)
-        .length;
+const nodejieba = require("nodejieba");
+
+function countWords(text, lang) {
+    text = text.trim();
+    if (!text) return 0;
+
+    if (lang.includes("Chinese")) {
+        return nodejieba.cut(text).length;
+    }
+
+    return text.split(/\s+/).filter(Boolean).length;
 }
 
 draftBox.addEventListener("input", () => {
