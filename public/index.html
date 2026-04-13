@@ -469,47 +469,49 @@ submitBtn.disabled = true;
 submitBtn.style.opacity = "0.5";
 submitBtn.style.cursor = "not-allowed";
 
-function countWords(text) {
-    text = text.trim();
-    if (!text) return 0;
+let countTimeout = null;
 
-    // detect CJK (Chinese/Japanese/Korean)
-    const isCJK = /[\u3400-\u9FBF\u3040-\u30FF\uAC00-\uD7AF]/.test(text);
+async function updateWordCount(text) {
+    const res = await fetch("/count-words", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ text })
+    });
 
-    if (isCJK) {
-        // character-based counting (stable for surveys)
-        return text.replace(/\s+/g, "").length;
-    }
-
-    return text.split(/\s+/).filter(Boolean).length;
+    const data = await res.json();
+    return data.count;
 }
 
 draftBox.addEventListener("input", () => {
 
-    const words = countWords(draftBox.value);
+    clearTimeout(countTimeout);
 
-    wordCounter.textContent = `Word count: ${words} / 50`;
+    countTimeout = setTimeout(async () => {
 
-    if (words >= 50) {
+        const words = await updateWordCount(draftBox.value);
 
-        submitBtn.disabled = false;
-        submitBtn.style.opacity = "1";
-        submitBtn.style.cursor = "pointer";
+        wordCounter.textContent = `Word count: ${words} / 50`;
 
-        wordCounter.classList.remove("wordLow");
-        wordCounter.classList.add("wordGood");
+        if (words >= 50) {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = "1";
+            submitBtn.style.cursor = "pointer";
 
-    } else {
+            wordCounter.classList.remove("wordLow");
+            wordCounter.classList.add("wordGood");
 
-        submitBtn.disabled = true;
-        submitBtn.style.opacity = "0.5";
-        submitBtn.style.cursor = "not-allowed";
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = "0.5";
+            submitBtn.style.cursor = "not-allowed";
 
-        wordCounter.classList.remove("wordGood");
-        wordCounter.classList.add("wordLow");
+            wordCounter.classList.remove("wordGood");
+            wordCounter.classList.add("wordLow");
+        }
 
-    }
-
+    }, 200); // debounce so you don't spam API
 });
 
 function formatResponse(text) {

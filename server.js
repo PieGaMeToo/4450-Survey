@@ -4,6 +4,7 @@ const cors = require("cors");
 const path = require("path");
 const Database = require("better-sqlite3");
 const { franc } = require("franc");
+const nodejieba = require("nodejieba");
 
 const app = express();
 
@@ -324,6 +325,33 @@ app.post("/stop-stream", (req, res) => {
         delete abortControllers[userId];
     }
     res.json({ status: "stopped" });
+});
+
+app.post("/count-words", (req, res) => {
+    const { text } = req.body;
+
+    if (typeof text !== "string") {
+        return res.status(400).json({ error: "Invalid text" });
+    }
+
+    const cleaned = text.trim();
+
+    if (!cleaned) {
+        return res.json({ count: 0 });
+    }
+
+    const isCJK = /[\u3400-\u9FBF\u3040-\u30FF\uAC00-\uD7AF]/.test(cleaned);
+
+    let count;
+
+    if (isCJK) {
+        count = nodejieba.cut(cleaned)
+            .filter(w => w.trim().length > 0).length;
+    } else {
+        count = cleaned.split(/\s+/).filter(Boolean).length;
+    }
+
+    res.json({ count });
 });
 
 app.listen(3000, () => {
