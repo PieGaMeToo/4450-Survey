@@ -328,30 +328,48 @@ app.post("/stop-stream", (req, res) => {
 });
 
 app.post("/count-words", (req, res) => {
-    const { text } = req.body;
+    try {
+        const { text } = req.body;
 
-    if (typeof text !== "string") {
-        return res.status(400).json({ error: "Invalid text" });
+        if (typeof text !== "string") {
+            return res.status(400).json({ count: 0 });
+        }
+
+        const cleaned = text.trim();
+
+        if (!cleaned) {
+            return res.json({ count: 0 });
+        }
+
+        const isCJK = /[\u3400-\u9FFF]/.test(cleaned);
+
+        let count = 0;
+
+        if (isCJK) {
+            try {
+                const tokens = nodejieba.cut(cleaned);
+                count = tokens.filter(t => t && t.trim()).length;
+
+                // fallback if jieba returns nonsense
+                if (count === 0) {
+                    count = cleaned.replace(/\s/g, "").length;
+                }
+            } catch (e) {
+                console.error("nodejieba failed:", e);
+
+                // fallback: count Chinese characters
+                count = cleaned.replace(/\s/g, "").length;
+            }
+        } else {
+            count = cleaned.split(/\s+/).filter(Boolean).length;
+        }
+
+        return res.json({ count });
+
+    } catch (err) {
+        console.error("count-words crash:", err);
+        return res.status(200).json({ count: 0 });
     }
-
-    const cleaned = text.trim();
-
-    if (!cleaned) {
-        return res.json({ count: 0 });
-    }
-
-    const isCJK = /[\u3400-\u9FBF\u3040-\u30FF\uAC00-\uD7AF]/.test(cleaned);
-
-    let count;
-
-    if (isCJK) {
-        count = nodejieba.cut(cleaned)
-            .filter(w => w.trim().length > 0).length;
-    } else {
-        count = cleaned.split(/\s+/).filter(Boolean).length;
-    }
-
-    res.json({ count });
 });
 
 app.listen(3000, () => {
