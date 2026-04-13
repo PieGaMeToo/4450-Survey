@@ -341,26 +341,15 @@ app.post("/count-words", (req, res) => {
             return res.json({ count: 0 });
         }
 
-        const isCJK = /[\u3400-\u9FFF]/.test(cleaned);
+        const isCJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(cleaned);
 
         let count = 0;
 
         if (isCJK) {
-            try {
-                const tokens = nodejieba.cut(cleaned);
-                count = tokens.filter(t => t && t.trim()).length;
-
-                // fallback if jieba returns nonsense
-                if (count === 0) {
-                    count = cleaned.replace(/\s/g, "").length;
-                }
-            } catch (e) {
-                console.error("nodejieba failed:", e);
-
-                // fallback: count Chinese characters
-                count = cleaned.replace(/\s/g, "").length;
-            }
+            // count characters only (no spaces removed needed, but safe to keep)
+            count = cleaned.replace(/\s/g, "").length;
         } else {
+            // normal whitespace-based languages
             count = cleaned.split(/\s+/).filter(Boolean).length;
         }
 
