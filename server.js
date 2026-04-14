@@ -49,16 +49,26 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 `);
 
+/* =========================================================
+   STATE (NOW SESSION-SCOPED)
+   ========================================================= */
+
 let conversations = {};
 let turnCounter = {};
 let abortControllers = {};
-function initializeConversation(userId, lang, draft = "") {
-    conversations[userId] = [
+
+/* SESSION KEY HELPER */
+function getSessionKey(userId, task, lang) {
+    return `${userId}-${task || "unknown"}-${lang || "English"}`;
+}
+
+function initializeConversation(sessionKey, lang, draft = "") {
+    conversations[sessionKey] = [
         { role: "system", content: `You are a helpful AI assistant. Only respond in ${lang}.` },
         { role: "assistant", content: draft }
     ];
-    conversations[userId].sentInitial = false;
-    console.log(`[AI Init] Responding in language: ${lang}`);
+    conversations[sessionKey].sentInitial = false;
+    console.log(`[AI Init] Session=${sessionKey} Language=${lang}`);
 }
 
 function getRefusalMessage(lang) {
@@ -74,6 +84,10 @@ function getRefusalMessage(lang) {
 
     return refusalMap[lang] || `I can only understand and respond in ${lang}.`;
 }
+
+/* =========================================================
+   START SESSION
+   ========================================================= */
 
 app.post("/start-session", (req, res) => {
     const { userId, language, task } = req.body;
@@ -102,14 +116,15 @@ app.post("/start-session", (req, res) => {
     res.json({ status: "ok", task_order });
 });
 
+/* =========================================================
+   SUBMIT DRAFT
+   ========================================================= */
 
 app.post("/submit-draft", (req, res) => {
 
     let { userId, taskOrder, draft } = req.body;
 
-    if (!draft) {
-        draft = "";
-    }
+    if (!draft) draft = "";
 
     if (!userId) {
         return res.status(400).json({ error: "Missing userId" });
@@ -130,98 +145,101 @@ app.post("/submit-draft", (req, res) => {
     `).run(finalDraft, userId, taskOrder);
 
     res.json({ status: "saved" });
-
 });
 
+/* =========================================================
+   CHAT STREAM SSE
+   ========================================================= */
+
 app.get("/chat-stream-sse", async (req, res) => {
+
     const userId = req.query.userId;
     const message = req.query.message;
     const lang = req.query.lang || "English";
+    const task = req.query.task || "unknown";
 
     if (!userId || !message) return res.status(400).end();
 
-    // Abort previous fetch if it exists
-    if (abortControllers[userId]) {
-        abortControllers[userId].abort();
-        delete abortControllers[userId];
+    const sessionKey = getSessionKey(userId, task, lang);
+
+    /* Abort previous stream for SAME session only */
+    if (abortControllers[sessionKey]) {
+        abortControllers[sessionKey].abort();
+        delete abortControllers[sessionKey];
     }
 
-    if (!conversations[userId]) {
-        initializeConversation(userId, lang);
+    if (!conversations[sessionKey]) {
+        initializeConversation(sessionKey, lang);
     }
 
-    // Only push the user message once
-    conversations[userId].push({ role: "user", content: message });
+    conversations[sessionKey].push({ role: "user", content: message });
 
-    // Build convo for AI
     let convoWithLang = [
-        { role: "system", content: `You are a helpful AI assistant. You must respond only in ${lang}. Do not switch languages.` },
-        ...conversations[userId] // user + assistant messages only
+        { role: "system", content: `You must respond only in ${lang}. Do not switch languages.` },
+        ...conversations[sessionKey]
     ];
 
     const taskPrompt = req.query.taskPrompt || "";
 
-    if (!conversations[userId].sentInitial) {
+    if (!conversations[sessionKey].sentInitial) {
         convoWithLang.unshift({ role: "user", content: taskPrompt });
-        conversations[userId].sentInitial = true;
-    }   
+        conversations[sessionKey].sentInitial = true;
+    }
 
-    if (!turnCounter[userId]) turnCounter[userId] = 0;
-    turnCounter[userId] += 1;
+    if (!turnCounter[sessionKey]) turnCounter[sessionKey] = 0;
+    turnCounter[sessionKey] += 1;
 
     let editIndex = req.query.editIndex;
-    editIndex = (editIndex === "" || editIndex === undefined || editIndex === "null") ? null : parseInt(editIndex);
+    editIndex = (editIndex === "" || editIndex === undefined || editIndex === "null")
+        ? null
+        : parseInt(editIndex);
 
     if (editIndex !== null && !isNaN(editIndex)) {
-        conversations[userId] = conversations[userId].slice(0, editIndex + 1);
+        conversations[sessionKey] = conversations[sessionKey].slice(0, editIndex + 1);
     }
 
     const timestamp = new Date().toISOString();
+
     db.prepare(`
         INSERT INTO messages (user_id, role, content, timestamp, turn_number, edit_index)
         VALUES (?, ?, ?, ?, ?, ?)
-    `).run(userId, "user", message, timestamp, turnCounter[userId], editIndex || null);
+    `).run(userId, "user", message, timestamp, turnCounter[sessionKey], editIndex || null);
 
-    // SSE setup
+    /* SSE setup */
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.flushHeaders();
+
     res.write(`data: ${JSON.stringify({ status: "connected" })}\n\n`);
     res.write("retry: 1000\n\n");
-
     res.write(`data: ${JSON.stringify({ aiLanguage: lang })}\n\n`);
 
-    const aiContext = conversations[userId]
+    const aiContext = conversations[sessionKey]
         .map(m => `[${m.role.toUpperCase()}]: ${m.content}`)
         .join("\n");
 
-    // Send context to frontend
     res.write(`data: ${JSON.stringify({ context: aiContext, type: "context" })}\n\n`);
 
     const heartbeat = setInterval(() => res.write(":\n\n"), 3000);
 
     const controller = new AbortController();
-    abortControllers[userId] = controller;
+    abortControllers[sessionKey] = controller;
 
     let botReply = "";
     let replySaved = false;
 
     req.on("close", () => {
         if (!replySaved && botReply.length > 0) {
-            try {
-                db.prepare(`
-                    INSERT INTO messages (user_id, role, content, timestamp, turn_number, edit_index)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                `).run(userId, "assistant", botReply, new Date().toISOString(), turnCounter[userId], editIndex || null);
-                console.log("Saved partial AI response");
-            } catch (e) {
-                console.error("Failed to save partial response", e);
-            }
+            db.prepare(`
+                INSERT INTO messages (user_id, role, content, timestamp, turn_number, edit_index)
+                VALUES (?, ?, ?, ?, ?, ?)
+            `).run(userId, "assistant", botReply, new Date().toISOString(), turnCounter[sessionKey], editIndex || null);
         }
+
         clearInterval(heartbeat);
         controller.abort();
-        delete abortControllers[userId];
+        delete abortControllers[sessionKey];
     });
 
     try {
@@ -243,27 +261,29 @@ app.get("/chat-stream-sse", async (req, res) => {
 
         for await (const chunk of ollamaResponse.body) {
             const lines = chunk.toString().split("\n").filter(Boolean);
+
             for (const line of lines) {
                 try {
                     const obj = JSON.parse(line);
                     if (obj.done) continue;
+
                     if (obj.message?.content) {
                         botReply += obj.message.content;
                         res.write(`data: ${JSON.stringify({ partial: botReply })}\n\n`);
                     }
+
                 } catch (err) {
                     console.error("Stream parse error:", err);
                 }
             }
         }
 
-        conversations[userId].push({ role: "assistant", content: botReply });
-        console.log(`[AI Response] Language: ${lang}`);
+        conversations[sessionKey].push({ role: "assistant", content: botReply });
 
         db.prepare(`
             INSERT INTO messages (user_id, role, content, timestamp, turn_number, edit_index)
             VALUES (?, ?, ?, ?, ?, ?)
-        `).run(userId, "assistant", botReply, new Date().toISOString(), turnCounter[userId], editIndex || null);
+        `).run(userId, "assistant", botReply, new Date().toISOString(), turnCounter[sessionKey], editIndex || null);
 
         replySaved = true;
 
@@ -274,18 +294,20 @@ app.get("/chat-stream-sse", async (req, res) => {
         res.write(`data: ${JSON.stringify({ error: "Chat failure" })}\n\n`);
     } finally {
         clearInterval(heartbeat);
-        delete abortControllers[userId];
+        delete abortControllers[sessionKey];
         res.end();
     }
 });
+
+/* =========================================================
+   TASK STATUS
+   ========================================================= */
 
 app.get("/task-status", (req, res) => {
 
     const userId = req.query.userId;
 
-    if (!userId) {
-        return res.json({ completedTasks: 0 });
-    }
+    if (!userId) return res.json({ completedTasks: 0 });
 
     const row = db.prepare(`
         SELECT COUNT(*) as count
@@ -293,12 +315,12 @@ app.get("/task-status", (req, res) => {
         WHERE user_id = ? AND completed = 1
     `).get(userId);
 
-    res.json({
-        completedTasks: row.count
-    });
-
+    res.json({ completedTasks: row.count });
 });
 
+/* =========================================================
+   STATIC + HEALTH
+   ========================================================= */
 
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -306,7 +328,10 @@ app.get("/health", (req, res) => {
     res.send("Survey server running.");
 });
 
-// Pre-warm Ollama model on server startup
+/* =========================================================
+   PREWARM
+   ========================================================= */
+
 fetch("http://localhost:11434/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -314,18 +339,28 @@ fetch("http://localhost:11434/api/chat", {
         model: "gemma2:2b",
         messages: [{ role: "user", content: "hi" }]
     })
-}).catch(err => {
-    console.error("Prewarm failed:", err);
-});
+}).catch(err => console.error("Prewarm failed:", err));
+
+/* =========================================================
+   STOP STREAM
+   ========================================================= */
 
 app.post("/stop-stream", (req, res) => {
-    const { userId } = req.body;
-    if (userId && abortControllers[userId]) {
-        abortControllers[userId].abort(); // abort the AI fetch
-        delete abortControllers[userId];
+    const { userId, task, lang } = req.body;
+
+    const sessionKey = getSessionKey(userId, task, lang);
+
+    if (abortControllers[sessionKey]) {
+        abortControllers[sessionKey].abort();
+        delete abortControllers[sessionKey];
     }
+
     res.json({ status: "stopped" });
 });
+
+/* =========================================================
+   COUNT WORDS
+   ========================================================= */
 
 app.post("/count-words", (req, res) => {
     try {
@@ -337,19 +372,15 @@ app.post("/count-words", (req, res) => {
 
         const cleaned = text.trim();
 
-        if (!cleaned) {
-            return res.json({ count: 0 });
-        }
+        if (!cleaned) return res.json({ count: 0 });
 
         const isCJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(cleaned);
 
         let count = 0;
 
         if (isCJK) {
-            // count characters only (no spaces removed needed, but safe to keep)
             count = cleaned.replace(/\s/g, "").length;
         } else {
-            // normal whitespace-based languages
             count = cleaned.split(/\s+/).filter(Boolean).length;
         }
 
@@ -361,7 +392,10 @@ app.post("/count-words", (req, res) => {
     }
 });
 
+/* =========================================================
+   START SERVER
+   ========================================================= */
+
 app.listen(3000, () => {
     console.log("Server running on http://localhost:3000");
 });
-
