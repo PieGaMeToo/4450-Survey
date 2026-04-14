@@ -240,15 +240,15 @@ if (urlLanguage && urlTask) {
     selectedLanguage = urlLanguage;
     selectedTask = urlTask;
 
-    fetch("/start-session", {
+    fetch("/chat-stream-sse", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            userId: userId,
-            language: selectedLanguage,
-            task: selectedTask
+            userId,
+            message: fullMessage,
+            lang,
+            task: selectedTask,
+            taskPrompt
         })
     })
     .then(res => res.json())
