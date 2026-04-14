@@ -328,7 +328,7 @@ document.getElementById("toPage3").onclick = async () => {
 
     selectedTask = task.value;
 
-    let userId = localStorage.getItem("uid");
+    userId = localStorage.getItem("uid");
     if (!userId) {
         userId = crypto.randomUUID();
         localStorage.setItem("uid", userId);
