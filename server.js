@@ -135,7 +135,7 @@ app.post("/submit-draft", (req, res) => {
     let finalDraft = draft;
 
     if (wordCount < 50) {
-        finalDraft = "Invalid Response, Less Than 50 Words";
+        finalDraft = "Invalid Response, Less Than 50 Words: " + draft;
     }
 
     db.prepare(`
