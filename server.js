@@ -49,15 +49,10 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 `);
 
-/* =========================================================
-   STATE (NOW SESSION-SCOPED)
-   ========================================================= */
-
 let conversations = {};
 let turnCounter = {};
 let abortControllers = {};
 
-/* SESSION KEY HELPER */
 function getSessionKey(userId, task, lang) {
     return `${userId}-${task || "unknown"}-${lang || "English"}`;
 }
@@ -70,24 +65,6 @@ function initializeConversation(sessionKey, lang, draft = "") {
     conversations[sessionKey].sentInitial = false;
     console.log(`[AI Init] Session=${sessionKey} Language=${lang}`);
 }
-
-function getRefusalMessage(lang) {
-    const refusalMap = {
-        English: "I can only understand and respond in English.",
-        Spanish: "Solo puedo entender y responder en español.",
-        Vietnamese: "Tôi chỉ có thể hiểu và trả lời bằng tiếng Việt.",
-        Korean: "저는 한국어로만 이해하고 응답할 수 있습니다.",
-        Hindi: "मैं केवल हिंदी में समझ और उत्तर दे सकता हूँ।",
-        "Chinese (Simplified)": "我只能用中文理解和回答。",
-        "Chinese (Traditional)": "我只能用中文理解和回答。"
-    };
-
-    return refusalMap[lang] || `I can only understand and respond in ${lang}.`;
-}
-
-/* =========================================================
-   START SESSION
-   ========================================================= */
 
 app.post("/start-session", (req, res) => {
     const { userId, language, task } = req.body;
@@ -116,10 +93,6 @@ app.post("/start-session", (req, res) => {
     res.json({ status: "ok", task_order });
 });
 
-/* =========================================================
-   SUBMIT DRAFT
-   ========================================================= */
-
 app.post("/submit-draft", (req, res) => {
 
     let { userId, taskOrder, draft } = req.body;
@@ -147,10 +120,6 @@ app.post("/submit-draft", (req, res) => {
     res.json({ status: "saved" });
 });
 
-/* =========================================================
-   CHAT STREAM SSE
-   ========================================================= */
-
 app.get("/chat-stream-sse", async (req, res) => {
 
     const userId = req.query.userId;
@@ -162,7 +131,6 @@ app.get("/chat-stream-sse", async (req, res) => {
 
     const sessionKey = getSessionKey(userId, task, lang);
 
-    /* Abort previous stream for SAME session only */
     if (abortControllers[sessionKey]) {
         abortControllers[sessionKey].abort();
         delete abortControllers[sessionKey];
@@ -205,7 +173,6 @@ app.get("/chat-stream-sse", async (req, res) => {
         VALUES (?, ?, ?, ?, ?, ?)
     `).run(userId, "user", message, timestamp, turnCounter[sessionKey], editIndex || null);
 
-    /* SSE setup */
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
@@ -299,10 +266,6 @@ app.get("/chat-stream-sse", async (req, res) => {
     }
 });
 
-/* =========================================================
-   TASK STATUS
-   ========================================================= */
-
 app.get("/task-status", (req, res) => {
 
     const userId = req.query.userId;
@@ -318,19 +281,11 @@ app.get("/task-status", (req, res) => {
     res.json({ completedTasks: row.count });
 });
 
-/* =========================================================
-   STATIC + HEALTH
-   ========================================================= */
-
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/health", (req, res) => {
     res.send("Survey server running.");
 });
-
-/* =========================================================
-   PREWARM
-   ========================================================= */
 
 fetch("http://localhost:11434/api/chat", {
     method: "POST",
@@ -341,9 +296,6 @@ fetch("http://localhost:11434/api/chat", {
     })
 }).catch(err => console.error("Prewarm failed:", err));
 
-/* =========================================================
-   STOP STREAM
-   ========================================================= */
 
 app.post("/stop-stream", (req, res) => {
     const { userId, task, lang } = req.body;
@@ -358,10 +310,6 @@ app.post("/stop-stream", (req, res) => {
     res.json({ status: "stopped" });
 });
 
-/* =========================================================
-   COUNT WORDS
-   ========================================================= */
-
 app.post("/count-words", (req, res) => {
     try {
         const { text } = req.body;
@@ -372,16 +320,28 @@ app.post("/count-words", (req, res) => {
 
         const cleaned = text.trim();
 
-        if (!cleaned) return res.json({ count: 0 });
+        if (!cleaned) {
+            return res.json({ count: 0 });
+        }
 
-        const isCJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(cleaned);
+        // Match:
+        // - CJK characters (Chinese, Japanese, Korean hanja/kanji/kana)
+        // - Latin words
+        const cjkRegex = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu;
+        const latinRegex = /[a-zA-Z]+/g;
 
         let count = 0;
 
-        if (isCJK) {
-            count = cleaned.replace(/\s/g, "").length;
-        } else {
-            count = cleaned.split(/\s+/).filter(Boolean).length;
+        // Count CJK characters individually
+        const cjkMatches = cleaned.match(cjkRegex);
+        if (cjkMatches) {
+            count += cjkMatches.length;
+        }
+
+        // Count Latin words
+        const latinMatches = cleaned.match(latinRegex);
+        if (latinMatches) {
+            count += latinMatches.length;
         }
 
         return res.json({ count });
@@ -391,10 +351,6 @@ app.post("/count-words", (req, res) => {
         return res.status(200).json({ count: 0 });
     }
 });
-
-/* =========================================================
-   START SERVER
-   ========================================================= */
 
 app.listen(3000, () => {
     console.log("Server running on http://localhost:3000");
