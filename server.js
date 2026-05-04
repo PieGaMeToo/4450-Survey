@@ -103,7 +103,20 @@ app.post("/submit-draft", (req, res) => {
         return res.status(400).json({ error: "Missing userId" });
     }
 
-    const wordCount = draft.trim().split(/\s+/).filter(w => w.length > 0).length;
+    const cleaned = draft.trim();
+
+    let wordCount = 0;
+
+    if (cleaned) {
+        const cjkRegex = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu;
+        const latinRegex = /[a-zA-Z]+/g;
+
+        const cjkMatches = cleaned.match(cjkRegex);
+        const latinMatches = cleaned.match(latinRegex);
+
+        if (cjkMatches) wordCount += cjkMatches.length;
+        if (latinMatches) wordCount += latinMatches.length;
+    }
 
     let finalDraft = draft;
 
